@@ -10,3 +10,51 @@ generator client {
   provider = "prisma-client-js"
   output = "../generated/client"
 }
+
+model User { 
+  id  String @id @default(uuid())
+  name String 
+  email String @unique
+  password String 
+  sessions  Session[]
+  createdAt DateTime @default(now())
+}
+
+enum PlatformEnum { 
+  LINKEDIN
+  X
+}
+
+model Profile { 
+  id String @id @default(uuid())
+  platform PlatformEnum
+  handle String
+  Data Json
+  createdAt DateTime @default(now())
+  sessions  Session[]
+  @@unique([platform , handle])
+}
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  profileId String
+  user      User      @relation(fields: [userId], references: [id])
+  profile   Profile   @relation(fields: [profileId], references: [id])
+  messages  Message[]
+  tokens    Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+model Message {
+  id        String   @id @default(uuid())
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  role      Role
+  content   String
+  createdAt DateTime @default(now())
+}
+enum Role {
+  user
+  assistant
+}
+
