@@ -7,7 +7,9 @@ import OpenAI from "openai";
 import cors from "cors"
 import {prisma} from "@repo/database"
 import { collectTwitterProfile } from "./xfetcher"
+import { collectLinkedInProfile , extractUsername } from "./linkedinFetcher"
 import axios from "axios"
+
 import { indexProfile, ragAnswer } from "./RAG";
 const app = express()
 
@@ -199,33 +201,35 @@ app.post("/getUserInfo", async (req, res) => {
   }
 
   const { handle, platform } = parsed.data;
+  
+  const normalizedHandle =
+    platform === "LINKEDIN"
+        ? extractUsername(handle)
+        : handle.replace(/^@/, "").trim()
+    const dbHandle = normalizedHandle.toLowerCase();
+
 
   try {
     // 1. Collect data from the right platform
-    const existing = await prisma.profile.findUnique({
-        where: { platform_handle: { platform, handle } },
-    });
 
-    if (existing) {
-        return res.json({ success: true, profile: existing, source: "cache" });
-    }
-    if (platform === "LINKEDIN") {
-      return res.status(501).json({ success: false, error: "LinkedIn scraping is not yet implemented. Please use the X platform." });
-    }
+    const profileData =
+        platform === "X"
+            ? await collectTwitterProfile(handle)
+            : await collectLinkedInProfile(handle);
 
-    const profileData = await collectTwitterProfile(handle);
 
     // 2. Check for collection errors
     if ("error" in profileData) {
       return res.status(404).json({ error: profileData.error });
     }
 
+    
     // 3. Upsert into DB — if same handle+platform exists, update it
     const profile = await prisma.profile.upsert({
       where: {
         platform_handle: {
           platform,
-          handle,
+          handle : dbHandle,
         },
       },
       update: {
@@ -233,7 +237,7 @@ app.post("/getUserInfo", async (req, res) => {
       },
       create: {
         platform,
-        handle,
+        handle : dbHandle,
         Data: profileData,
       },
     });
