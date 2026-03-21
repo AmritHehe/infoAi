@@ -32,6 +32,7 @@ model Profile {
   Data Json
   createdAt DateTime @default(now())
   sessions  Session[]
+  embeddings Embedding[]
   @@unique([platform , handle])
 }
 model Session {
@@ -51,6 +52,15 @@ model Message {
   session   Session  @relation(fields: [sessionId], references: [id])
   role      Role
   content   String
+  createdAt DateTime @default(now())
+}
+model Embedding {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  chunkText String
+  chunkType String  // "tweet" | "bio" | "location" | "experience"
+  embedding Unsupported("vector(1024)")  // qwen3 outputs 1024 dims
   createdAt DateTime @default(now())
 }
 enum Role {
