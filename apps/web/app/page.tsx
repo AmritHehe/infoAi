@@ -28,6 +28,8 @@ export default function HomePage() {
     input, setInput,
     isSending,
     error,
+    ragMode, 
+    setRagMode,
     handleExtract,
     handleSend,
     handleReset,
@@ -117,10 +119,12 @@ export default function HomePage() {
               messages={messages}
               input={input}
               isSending={isSending}
+              ragMode={ragMode} 
               onInputChange={setInput}
               onSend={handleSend}
               onReset={handleReset}
               onSignOut={handleSignOut}
+              onRagToggle={setRagMode} 
             />
           )}
 

@@ -2,8 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Platform, Stage, Message, ProfileData } from "../types";
-
-import { getUserInfo, startSession, sendMessage } from "../lib/api";
+import { getUserInfo, startSession, sendMessage, sendRagMessage } from "../lib/api";
 import { getUserIdFromToken } from "./useAuth";
 
 export function useChat() {
@@ -17,6 +16,7 @@ export function useChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ragMode, setRagMode] = useState(false); // ← RAG toggle state
 
   const handleExtract = useCallback(async () => {
     if (!handle.trim()) return;
@@ -55,17 +55,29 @@ export function useChat() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
-      const reply = await sendMessage(sessionId, text);
+      // ← Route to RAG or standard chat based on toggle
+      const reply = ragMode
+        ? await sendRagMessage(sessionId, text)
+        : await sendMessage(sessionId, text);
+
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-    } catch {
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: "Sorry, something went wrong. Please try again.",
-      }]);
+    } catch (err: any) {
+      // Handle not-indexed error specifically
+      if (err.message?.includes("not indexed")) {
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: "⚠ Profile not indexed yet. Click 'index for RAG' above first, then try again.",
+        }]);
+      } else {
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        }]);
+      }
     } finally {
       setIsSending(false);
     }
-  }, [input, isSending, sessionId]);
+  }, [input, isSending, sessionId, ragMode]);
 
   const handleReset = useCallback(() => {
     setStage("idle");
@@ -74,6 +86,7 @@ export function useChat() {
     setSessionId(null);
     setMessages([]);
     setError(null);
+    setRagMode(false);
   }, []);
 
   return {
@@ -86,6 +99,7 @@ export function useChat() {
     input, setInput,
     isSending,
     error,
+    ragMode, setRagMode,
     handleExtract,
     handleSend,
     handleReset,
