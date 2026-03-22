@@ -83,6 +83,10 @@ export default function HomePage() {
 
         {stage === "idle" && (
           <div className="flex flex-col items-center w-full animate-fade-up">
+            <div className="mb-14 font-sans font-bold text-xl tracking-tight text-[#f0f0f0]">
+              footprint
+            </div>
+
             <div className="flex flex-col items-center text-center gap-4 mb-10 w-full">
               
               <h1 className="text-3xl md:text-[38px] font-bold tracking-tight text-[#f0f0f0] flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2">

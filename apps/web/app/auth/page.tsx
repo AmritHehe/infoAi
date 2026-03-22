@@ -88,6 +88,10 @@ export default function AuthPage() {
 
       <main className="relative z-10 w-full max-w-100 flex flex-col items-center animate-fade-up">
 
+        <div className="mb-12 font-sans font-bold text-xl tracking-tight text-[#f0f0f0]">
+          footprint
+        </div>
+
         <div className="flex flex-col items-center text-center gap-1.5 mb-8">
           <h1 className="text-[28px] font-bold tracking-tight text-[#f0f0f0]">
             {mode === "signin" ? "Welcome back" : "Create an account"}

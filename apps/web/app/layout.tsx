@@ -5,7 +5,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "AIInfo - Chat to any persons twitter profile",
+  title: "footprint",
   description: "Compete in live coding contests, master DSA and development challenges, and track your progress on the global leaderboard.",
   keywords: ["coding", "contests", "DSA", "development", "competitive programming", "leaderboard"],
 };
