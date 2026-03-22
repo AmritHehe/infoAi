@@ -8,6 +8,7 @@ import LoadingIsland from "./components/Island/LoadingIsland";
 import ChatIsland from "./components/Island/ChatIsland";
 import IdleIsland from "./components/Island/IdleIsland";
 import SessionsIsland from "./components/Island/SessionsIsland";
+import { Linkedin } from "lucide-react";
 
 export default function HomePage() {
   const router = useRouter();
@@ -85,7 +86,24 @@ export default function HomePage() {
 
         {/* IDLE */}
         {stage === "idle" && (
-          <>
+          <div className="flex flex-col items-center w-full animate-fade-up">
+            {/* Hero Text */}
+            <div className="flex flex-col items-center text-center gap-4 mb-10 w-full">
+              
+              <h1 className="text-3xl md:text-[38px] font-bold tracking-tight text-[#f0f0f0] flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2">
+                <span>Chat with anyone's</span>
+                <Linkedin className="w-8 h-8 md:w-9 md:h-9 text-accent" strokeWidth={2.5} />
+                <span className="text-white/40 text-2xl font-light italic">or</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="w-7 h-7 md:w-8 md:h-8 fill-current text-[#f0f0f0]">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </h1>
+              
+              <p className="text-[14px] text-white/40 max-w-[380px] leading-relaxed">
+                Paste a public profile link to instantly extract their data and start asking questions.
+              </p>
+            </div>
+
             <IdleIsland
               handle={handle}
               platform={platform}
@@ -93,7 +111,8 @@ export default function HomePage() {
               onPlatformChange={setPlatform}
               onSubmit={handleExtract}
             />
-            <div className="flex items-center gap-4">
+            
+            <div className="flex items-center gap-4 mt-6">
               <button
                 onClick={handleShowSessions}
                 disabled={isLoadingSessions}
@@ -109,7 +128,7 @@ export default function HomePage() {
                 sign out
               </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* SESSIONS */}
@@ -160,7 +179,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <p className="fixed bottom-5 font-mono text-[11px] text-white/20 tracking-[0.05em]">
-        digital footprint · ai agent
+        profile chat · ai agent
       </p>
     </div>
   );

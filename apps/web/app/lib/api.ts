@@ -1,6 +1,6 @@
 import { Platform } from "../types";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = "https://api-infoai.amrithehe.com";
 
 function getHeaders(includeContentType = true) {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
