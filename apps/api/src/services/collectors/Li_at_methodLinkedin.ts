@@ -1,5 +1,5 @@
 import { PlaywrightCrawler } from "crawlee";
-import type { LinkedInProfile } from "./types";
+import type { LinkedInProfile } from "../../types";
 
 export function extractUsername(urlOrHandle: string): string {
   try {

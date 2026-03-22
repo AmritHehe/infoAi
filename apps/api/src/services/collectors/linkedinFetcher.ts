@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { LinkedInProfile } from "./types";
+import type { LinkedInProfile } from "../../types";
 
 const BASE_URL = "https://api.sociavault.com/v1/scrape/linkedin";
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TwitterProfile, Tweet } from "./types";
+import type { TwitterProfile, Tweet } from "../../types";
 
 const BASE_URL = "https://api.twitterapi.io";
 
