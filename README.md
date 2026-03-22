@@ -1,4 +1,4 @@
-# ⟡ AI Profile Chat (InfoAI)
+# footprint
 
 InfoAI is a full-stack, AI-powered application that extracts digital footprint data from public social profiles (X/Twitter and LinkedIn) and allows users to interactively chat with a specialized AI agent about that person's background. It utilizes **Retrieval-Augmented Generation (RAG)** to provide highly accurate, hallucination-free answers based exclusively on the extracted profile context.
 
