@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Message, Platform } from "../../types";
 
 const SUGGESTIONS: Record<Platform, string[]> = {
@@ -41,13 +43,68 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
 
             {/* Bubble */}
             <div className={`
-              max-w-[78%] px-3.5 py-2.5 rounded-2xl font-mono text-[13px] leading-relaxed
+              max-w-[85%] px-4 py-3 rounded-2xl font-mono text-[13px] leading-relaxed
               ${msg.role === "assistant"
                 ? "bg-white/4 border border-white/7 rounded-tl-sm text-[#f0f0f0]"
-                : "bg-[#e8ff47] text-black font-medium rounded-tr-sm"
+                : "bg-[#e8ff47] text-black font-medium rounded-tr-sm break-words"
               }
             `}>
-              {msg.content}
+              {msg.role === "assistant" ? (
+                <div className="markdown-body">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ node, ...props }) => <p className="mb-2.5 last:mb-0 leading-relaxed" {...props} />,
+                      a: ({ node, ...props }) => (
+                        <a
+                          className="text-[#e8ff47] underline decoration-white/20 underline-offset-4 hover:decoration-[#e8ff47]/60 transition-colors"
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          {...props}
+                        />
+                      ),
+                      ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1.5 marker:text-white/30" {...props} />,
+                      ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1.5 marker:text-white/30" {...props} />,
+                      li: ({ node, ...props }) => <li className="" {...props} />,
+                      strong: ({ node, ...props }) => <strong className="font-bold text-white/90" {...props} />,
+                      em: ({ node, ...props }) => <em className="text-white/70 italic" {...props} />,
+                      code: (props) => {
+                        const { children, className, node, ...rest } = props;
+                        const match = /language-(\w+)/.exec(className || "");
+                        const isInline = !match && !String(children).includes("\\n");
+                        return isInline ? (
+                          <code className="bg-white/10 text-white/90 px-1.5 py-0.5 rounded text-[12px]" {...rest}>
+                            {children}
+                          </code>
+                        ) : (
+                          <div className="bg-[#0a0a0a] border border-white/10 rounded-lg p-3 mb-3 overflow-x-auto">
+                            <code className="text-[12px] text-white/70 tracking-wide" {...rest}>
+                              {children}
+                            </code>
+                          </div>
+                        );
+                      },
+                      h1: ({ node, ...props }) => <h1 className="font-bold text-[16px] text-white mt-4 mb-2" {...props} />,
+                      h2: ({ node, ...props }) => <h2 className="font-bold text-[15px] text-white/90 mt-4 mb-2" {...props} />,
+                      h3: ({ node, ...props }) => <h3 className="font-bold text-[14px] text-white/80 mt-3 mb-1.5" {...props} />,
+                      blockquote: ({ node, ...props }) => (
+                        <blockquote className="border-l-2 border-[#e8ff47]/50 pl-3.5 my-3 text-white/60 italic" {...props} />
+                      ),
+                      table: ({ node, ...props }) => (
+                        <div className="w-full overflow-x-auto mb-3">
+                          <table className="w-full text-left border-collapse" {...props} />
+                        </div>
+                      ),
+                      th: ({ node, ...props }) => <th className="border-b border-white/10 p-2 font-semibold" {...props} />,
+                      td: ({ node, ...props }) => <td className="border-b border-white/5 p-2 text-white/70" {...props} />,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
