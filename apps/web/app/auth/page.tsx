@@ -91,6 +91,18 @@ export default function AuthPage() {
 
       <main className="relative z-10 w-full max-w-[400px] flex flex-col items-center animate-fade-up">
 
+        {/* Header */}
+        <div className="flex flex-col items-center text-center gap-1.5 mb-8">
+          <h1 className="text-[28px] font-bold tracking-tight text-[#f0f0f0]">
+            {mode === "signin" ? "Welcome back" : "Create an account"}
+          </h1>
+          <p className="text-[14px] text-white/40">
+            {mode === "signin"
+              ? "Sign in to your account to continue"
+              : "Enter your details to get started"}
+          </p>
+        </div>
+
         {/* Card */}
         <div className="w-full bg-[#111] border border-white/7 rounded-[20px] overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_40px_80px_rgba(0,0,0,0.5),0_0_80px_rgba(232,255,71,0.02)]">
           {/* Tabs */}
