@@ -1,199 +1,136 @@
-# Turborepo + Prisma ORM starter
+# ⟡ AI Profile Chat (InfoAI)
 
-This is a example designed to help you quickly set up a Turborepo monorepo with a Next.js app and Prisma ORM. This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+InfoAI is a full-stack, AI-powered application that extracts digital footprint data from public social profiles (X/Twitter and LinkedIn) and allows users to interactively chat with a specialized AI agent about that person's background. It utilizes **Retrieval-Augmented Generation (RAG)** to provide highly accurate, hallucination-free answers based exclusively on the extracted profile context.
 
-## What's inside?
+---
 
-This turborepo includes the following packages/apps:
+## 🌟 Features
 
-### Apps and packages
+- **Instant Profile Extraction:** Scrapes and processes public data from X/Twitter and LinkedIn instantly.
+- **AI-Powered Chat:** Leverages OpenRouter LLMs to answer specific questions based on the extracted profile context.
+- **RAG Architecture:** Uses localized chunking, embedding generation, and Postgres vector similarity search (`pgvector`) to find exact quotes and stats for the AI to reference.
+- **Session Management:** Secure JWT authentication, persistent chat sessions, and profile caching to prevent redundant API/scraping calls.
+- **Sleek Aesthetic:** A beautiful, minimalist "Island" architecture UI built with Next.js and Tailwind CSS v4.
 
-- `web`: a [Next.js](https://nextjs.org/) app
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/database`: [Prisma ORM](https://prisma.io/) to manage & access your database
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+---
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## 🏗 System Architecture & Flow Diagram
 
-### Utilities
+The system operates as a Turborepo monorepo containing a **Next.js web client** and an **Express REST API backend**. 
 
-This turborepo has some additional tools already setup for you:
+```mermaid
+sequenceDiagram
+    participant U as User / Client (Next.js)
+    participant A as Express API (Node.js)
+    participant DB as Neon DB (Postgres + pgvector)
+    participant S as Scraper (Puppeteer/Axios)
+    participant LLM as OpenRouter API
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-- [Prisma ORM](https://prisma.io/) for accessing the database
-- [Docker Compose](https://docs.docker.com/compose/) for a local MySQL database
-
-## Getting started
-
-Follow these steps to set up and run your Turborepo project with Prisma ORM:
-
-### 1. Create a Turborepo project
-
-Start by creating a new Turborepo project using the following command:
-
-```sh
-npx create-turbo@latest -e with-prisma
+    U->>A: 1. Submit Profile URL (X/LinkedIn)
+    A->>DB: 2. Check Cache for Profile
+    alt Not in Cache
+        A->>S: 3. Trigger Scraper
+        Note over S: Logs in via li_at cookie <br/> Scrolls & Extracts Data
+        S-->>A: Return Raw Profile Data
+        A->>DB: 4. Upsert Profile Data
+    end
+    
+    A->>LLM: 5. Generate Vector Embeddings (Chunks)
+    LLM-->>A: Return Text Embeddings
+    A->>DB: 6. Store Vectors in pgvector
+    
+    A-->>U: 7. Profile Ready (UI Transitions to Chat)
+    
+    U->>A: 8. Send Chat Message
+    A->>LLM: 9. Embed User Question
+    LLM-->>A: Vector
+    A->>DB: 10. Vector Similarity Search (Top-K Chunks)
+    DB-->>A: Return matching context chunks
+    A->>LLM: 11. LLM Chat Generation with Context (RAG)
+    LLM-->>A: Final Answer
+    A-->>U: 12. Display Answer to User
 ```
 
-Choose your desired package manager when prompted and a name for the app (e.g., `my-turborepo`). This will scaffold a new Turborepo project with Prisma ORM included and dependencies installed.
+---
 
-Navigate to your project directory:
+## 💻 Tech Stack
 
+- **Frontend:** Next.js (App Router), React, Tailwind CSS v4, Lucide Icons.
+- **Backend:** Node.js, Express, Puppeteer (Headless Web Scraping).
+- **Database:** PostgreSQL (hosted on [Neon.tech](https://neon.tech/)) utilizing the `pgvector` extension for similarity search.
+- **ORM:** Prisma Client.
+- **AI & Embeddings:** OpenRouter AI.
+- **Package Manager:** Bun / Turborepo.
+
+---
+
+## 🚀 Getting Started (Local Development)
+
+### 1. Prerequisites
+Ensure you have the following installed on your machine:
+- [Bun](https://bun.sh/) (JavaScript runtime and package manager)
+- A [Neon.tech](https://neon.tech/) PostgreSQL database (or any local Postgres instance with the `pgvector` extension enabled).
+- An [OpenRouter](https://openrouter.ai/) account and API key for generating embeddings and chat completions.
+- A LinkedIn account (to extract a `li_at` session cookie to bypass login walls).
+
+### 2. Clone and Install
+Clone the repository and install the dependencies from the root of the Turborepo:
 ```bash
-cd ./my-turborepo
+git clone <your-repo-url>
+cd infoai
+bun install
 ```
 
-### 2. Setup a local database with Docker Compose
+### 3. Environment Variables
+You need to set up environment variables for the backend API. Create a `.env` file inside `apps/api/.env`:
 
-We use [Prisma ORM](https://prisma.io/) to manage and access our database. As such you will need a database for this project, either locally or hosted in the cloud.
+```env
+# Server
+PORT=8000
+NODE_ENV=development
 
-To make this process easier, a [`docker-compose.yml` file](./docker-compose.yml) is included to setup a MySQL server locally with a new database named `turborepo`:
+# Database
+# Note: Ensure your database has the pgvector extension enabled!
+DATABASE_URL="postgresql://user:password@endpoint.neon.tech/neondb?sslmode=require"
 
-Start the MySQL database using Docker Compose:
+# Authentication
+JWT_SECRET="your-super-secret-jwt-key"
 
-```sh
-docker-compose up -d
+# AI
+OPENROUTER_API_KEY="sk-or-v1-..."
+
+# LinkedIn Scraper Authentication
+# You can get this by logging into LinkedIn, opening DevTools -> Application -> Cookies
+LINKEDIN_LI_AT="your-linkedin-li_at-cookie-value"
 ```
 
-To change the default database name, update the `MYSQL_DATABASE` environment variable in the [`docker-compose.yml` file](/docker-compose.yml).
-
-### 3. Setup environment variables
-
-Once the database is ready, copy the `.env.example` file to the [`/packages/database`](./packages/database/) and [`/apps/web`](./apps/web/) directories as `.env`:
-
+### 4. Database Setup
+Once your `.env` is configured with a valid Neon Postgres URL, generate the Prisma client and push the schema to your database.
 ```bash
-cp .env.example ./packages/database/.env
-cp .env.example ./apps/web/.env
+cd apps/api
+bunx prisma generate
+bunx prisma db push
 ```
 
-This ensures Prisma has access to the `DATABASE_URL` environment variable, which is required to connect to your database.
+*Note: If Prisma complains about the `vector` type missing, you may need to manually run `CREATE EXTENSION vector;` in your Neon SQL editor before pushing.*
 
-If you added a custom database name, or use a cloud based database, you will need to update the `DATABASE_URL` in your `.env` accordingly.
-
-### 4. Migrate your database
-
-Once your database is running, you’ll need to create and apply migrations to set up the necessary tables. Run the database migration command:
-
+### 5. Run the Application
+Start both the frontend and backend concurrently from the root directory using Turbo:
 ```bash
-# Using npm
-npm run db:migrate:dev
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run db:migrate:dev
-
-# Using pnpm
-pnpm run db:migrate:dev
-
-# Using bun
-bun run db:migrate:dev
-```
-
-</details>
-
-You’ll be prompted to name the migration. Once you provide a name, Prisma will create and apply the migration to your database.
-
-> Note: The `db:migrate:dev` script (located in [packages/database/package.json](/packages/database/package.json)) uses [Prisma Migrate](https://www.prisma.io/migrate) under the hood.
-
-For production environments, always push schema changes to your database using the [`prisma migrate deploy` command](https://www.prisma.io/docs/orm/prisma-client/deployment/deploy-database-changes-with-prisma-migrate). You can find an example `db:migrate:deploy` script in the [`package.json` file](/packages/database/package.json) of the `database` package.
-
-### 5. Seed your database
-
-To populate your database with initial or fake data, use [Prisma's seeding functionality](https://www.prisma.io/docs/guides/database/seed-database).
-
-Update the seed script located at [`packages/database/src/seed.ts`](/packages/database/src/seed.ts) to include any additional data that you want to seed. Once edited, run the seed command:
-
-```bash
-# Using npm
-npm run db:seed
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run db:seed
-
-# Using pnpm
-pnpm run db:seed
-
-# Using bun
-bun run db:seed
-```
-
-</details>
-
-### 6. Build your application
-
-To build all apps and packages in the monorepo, run:
-
-```bash
-# Using npm
-npm run build
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run build
-
-# Using pnpm
-pnpm run build
-
-# Using bun
-bun run build
-```
-
-</details>
-
-### 7. Start the application
-
-Finally, start your application with:
-
-```bash
-yarn run dev
-```
-
-<details>
-
-<summary>Expand for <code>yarn</code>, <code>pnpm</code> or <code>bun</code></summary>
-
-```bash
-# Using yarn
-yarn run dev
-
-# Using pnpm
-pnpm run dev
-
-# Using bun
 bun run dev
 ```
 
-</details>
+- **Frontend:** Localhost port 3000 (`http://localhost:3000`)
+- **Backend API:** Localhost port 8000 (`http://localhost:8000`)
 
-Your app will be running at `http://localhost:3000`. Open it in your browser to see it in action!
+*(Note: If testing locally, ensure you update the `API_BASE` variable in `apps/web/app/lib/api.ts` to point to `http://localhost:8000` instead of the production EC2 URL).*
 
-You can also read the official [detailed step-by-step guide from Prisma ORM](https://pris.ly/guide/turborepo?utm_campaign=turborepo-example) to build a project from scratch using Turborepo and Prisma ORM.
+---
 
-## Useful Links
+## 📌 Usage Guide
 
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+1. **Sign Up/In:** Create an account on the landing page to get an active JWT session token.
+2. **Idle State:** Paste a valid X/Twitter handle (e.g., `elonmusk`) or an entire LinkedIn URL.
+3. **Extraction & Chunking:** The backend will scrape the latest data, chunk it, request vector embeddings from OpenRouter, and save them directly to the Neon DB. 
+4. **Chat:** Once the UI transitions to the Chat Island, begin asking targeted questions like *"Where does this person currently work?"* or *"What did they tweet about last week?"*.
+5. **Session History:** You can access past conversations via the "Sessions" tab without needing to re-scrape or re-embed the user's profile.
