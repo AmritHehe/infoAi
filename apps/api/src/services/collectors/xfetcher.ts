@@ -21,7 +21,7 @@ async function fetchProfile(username: string) {
   }
 
   console.log("fetch profile reuslt" + JSON.stringify(res.data))
-  return res.data.data; // ← unwrap nested data object
+  return res.data.data; 
 }
 
 async function fetchTweets(username: string): Promise<Tweet[]> {

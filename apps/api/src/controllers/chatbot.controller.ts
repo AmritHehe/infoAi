@@ -2,8 +2,7 @@ import { StartChatSchema , SendMessageSchema , GetSessionsSchema } from "../vali
 import  type { Request , Response } from "express"
 import {prisma} from "@repo/database"
 import { callOpenRouter , buildSystemPrompt  } from "../services/chatbot.services";
-// ---- POST /chat/start ----
-// Creates a new session for a profile
+
 
 export async function  NewSessionController ( req : Request  , res : Response ) { 
 
@@ -24,7 +23,7 @@ export async function  NewSessionController ( req : Request  , res : Response ) 
       data: {
         userId,
         profileId,
-        tokens: 0, // ← no messages field, Message is a separate table
+        tokens: 0, 
       },
     });
 
@@ -35,7 +34,7 @@ export async function  NewSessionController ( req : Request  , res : Response ) 
   }
 };
 
-// ---- POST /chat/message ----
+
 export async function  NewMessageController ( req : Request  , res : Response ) {
   const parsed = SendMessageSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -45,13 +44,13 @@ export async function  NewMessageController ( req : Request  , res : Response ) 
   const { sessionId, message } = parsed.data;
 
   try {
-    // 1. Load session + profile + all past messages from DB
+
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
       include: {
         profile: true,
         messages: {
-          orderBy: { createdAt: "asc" }, // ← chronological order matters for AI context
+          orderBy: { createdAt: "asc" },
         },
       },
     });
@@ -60,22 +59,22 @@ export async function  NewMessageController ( req : Request  , res : Response ) 
       return res.status(404).json({ error: "Session not found. Call /chat/start first." });
     }
 
-    // 2. Build conversation history from DB messages
+
     const history = session.messages.map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     }));
 
-    // 3. Build system prompt from profile data
+
     const systemPrompt = buildSystemPrompt(session.profile);
 
-    // 4. Call OpenRouter with full history + new message
+
     const reply = await callOpenRouter(systemPrompt, [
       ...history,
       { role: "user", content: message },
     ]);
 
-    // 5. Save user message and AI reply to DB in one transaction
+
     await prisma.$transaction([
       prisma.message.create({
         data: {
@@ -137,7 +136,7 @@ export async function  GetSessionsController ( req : Request  , res : Response )
       },
     });
 
-    // Shape the response cleanly
+
     const formatted = sessions.map(session => {
       const data = session.profile.Data as any;
       const lastMessage = session.messages[session.messages.length - 1] ?? null;
@@ -160,7 +159,7 @@ export async function  GetSessionsController ( req : Request  , res : Response )
         lastMessage: lastMessage
           ? {
               role: lastMessage.role,
-              content: lastMessage.content.slice(0, 100), // preview
+              content: lastMessage.content.slice(0, 100),
               createdAt: lastMessage.createdAt,
             }
           : null,

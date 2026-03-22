@@ -211,7 +211,7 @@ app.post("/getUserInfo", async (req, res) => {
 
 
   try {
-    // 1. Collect data from the right platform
+
 
     const profileData =
         platform === "X"
@@ -219,13 +219,13 @@ app.post("/getUserInfo", async (req, res) => {
             : await collectLinkedInProfile(handle);
 
 
-    // 2. Check for collection errors
+
     if ("error" in profileData) {
       return res.status(404).json({ error: profileData.error });
     }
 
     
-    // 3. Upsert into DB — if same handle+platform exists, update it
+
     const profile = await prisma.profile.upsert({
       where: {
         platform_handle: {

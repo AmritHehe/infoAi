@@ -38,7 +38,7 @@ export default function ChatIsland({
         onSignOut={onSignOut}
       />
 
-      {/* RAG toolbar — sits between header and messages */}
+
       <RagToggle
         profileId={profileData.id}
         ragMode={ragMode}

@@ -51,13 +51,11 @@ export default function HomePage() {
     router.replace("/auth");
   };
 
-  // Render nothing until hydration + auth check finishes
   if (!hydrated || !authed) return null;
 
   return (
     <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
 
-      {/* Grain overlay */}
       <div
         className="fixed inset-0 pointer-events-none z-100 opacity-[0.025]"
         style={{
@@ -66,7 +64,6 @@ export default function HomePage() {
         }}
       />
 
-      {/* Grid background */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -84,10 +81,8 @@ export default function HomePage() {
         ${stage === "chat" ? "max-w-2xl" : "max-w-140"}
       `}>
 
-        {/* IDLE */}
         {stage === "idle" && (
           <div className="flex flex-col items-center w-full animate-fade-up">
-            {/* Hero Text */}
             <div className="flex flex-col items-center text-center gap-4 mb-10 w-full">
               
               <h1 className="text-3xl md:text-[38px] font-bold tracking-tight text-[#f0f0f0] flex flex-wrap items-center justify-center gap-x-3.5 gap-y-2">
@@ -131,7 +126,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* SESSIONS */}
         {stage === "sessions" && (
           <SessionsIsland
             sessions={pastSessions}
@@ -141,7 +135,6 @@ export default function HomePage() {
           />
         )}
 
-        {/* LOADING */}
         {stage === "loading" && (
           <LoadingIsland
             handle={handle}
@@ -151,7 +144,6 @@ export default function HomePage() {
           />
         )}
 
-        {/* CHAT */}
         {stage === "chat" && profileData && (
           <ChatIsland
             profileData={profileData}
@@ -169,7 +161,6 @@ export default function HomePage() {
           />
         )}
 
-        {/* Error pill */}
         {error && (
           <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-130 text-center">
             ⚠ {error}
@@ -177,9 +168,8 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Footer */}
       <p className="fixed bottom-5 font-mono text-[11px] text-white/20 tracking-[0.05em]">
-        profile chat · ai agent
+        digital footprint · ai agent
       </p>
     </div>
   );

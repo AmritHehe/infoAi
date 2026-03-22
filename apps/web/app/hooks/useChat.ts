@@ -78,7 +78,6 @@ export function useChat() {
     }
   }, [input, isSending, sessionId, ragMode]);
 
-  // ── Open the sessions history panel ──────────────────────────────────────────
   const handleShowSessions = useCallback(async () => {
     setIsLoadingSessions(true);
     setError(null);
@@ -95,7 +94,6 @@ export function useChat() {
     }
   }, []);
 
-  // ── Resume a past session — load its messages and go straight to chat ────────
   const handleResumeSession = useCallback((session: SessionSummary) => {
     const restoredProfile: ProfileData = {
       id: session.profile.id,

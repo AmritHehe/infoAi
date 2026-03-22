@@ -40,7 +40,7 @@ export async function collectLinkedInProfile(
 ): Promise<LinkedInProfile | { error: string }> {
   const username = extractUsername(urlOrHandle);
 
-  // ← always use in.linkedin.com — bypasses auth wall for public profiles
+ 
   const linkedinUrl = `https://in.linkedin.com/in/${username}/`;
 
   console.log(`[LinkedIn] Fetching: "${linkedinUrl}"`);

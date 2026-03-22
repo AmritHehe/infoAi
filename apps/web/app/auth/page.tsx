@@ -43,7 +43,6 @@ export default function AuthPage() {
 
       if (mode === "signup") {
         setSuccess("Account created! Signing you in...");
-        // Auto sign in after signup
         const signinRes = await fetch(`${API_BASE}/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -68,7 +67,6 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
-      {/* Grain overlay */}
       <div
         className="fixed inset-0 pointer-events-none z-[100] opacity-[0.03]"
         style={{
@@ -77,7 +75,6 @@ export default function AuthPage() {
         }}
       />
 
-      {/* Grid background */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
@@ -91,7 +88,6 @@ export default function AuthPage() {
 
       <main className="relative z-10 w-full max-w-[400px] flex flex-col items-center animate-fade-up">
 
-        {/* Header */}
         <div className="flex flex-col items-center text-center gap-1.5 mb-8">
           <h1 className="text-[28px] font-bold tracking-tight text-[#f0f0f0]">
             {mode === "signin" ? "Welcome back" : "Create an account"}
@@ -103,9 +99,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="w-full bg-[#111] border border-white/7 rounded-[20px] overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_40px_80px_rgba(0,0,0,0.5),0_0_80px_rgba(232,255,71,0.02)]">
-          {/* Tabs */}
           <div className="flex border-b border-white/7">
             <button
               className={`flex-1 p-4 bg-transparent border-none cursor-pointer font-mono text-xs font-medium tracking-[0.06em] uppercase transition-all relative ${mode === "signin" ? "text-[#f0f0f0]" : "text-white/40 hover:text-white/60"}`}
@@ -123,9 +117,7 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Form */}
           <div className="flex flex-col gap-3.5 px-6 py-7">
-            {/* Name — only signup */}
             <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${mode === "signup" ? "max-h-[80px] opacity-100" : "max-h-0 opacity-0 pointer-events-none mb-[-14px]"}`}>
               <div className="flex flex-col gap-1.5">
                 <label className="font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-white/40">Name</label>
@@ -179,7 +171,6 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Feedback */}
           {error && (
             <div className="mx-6 mb-5 px-3.5 py-2.5 rounded-[10px] font-mono text-xs bg-[rgba(255,107,107,0.08)] border border-[rgba(255,107,107,0.2)] text-[#ff6b6b] animate-fade-up">
               ⚠ {error}

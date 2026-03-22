@@ -16,7 +16,7 @@ export default function IdleIsland({
   return (
     <div className="w-full bg-[#111] border border-white/7 rounded-3xl overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.6)] pl-5 pr-1.5 py-1.5">
       <div className="flex items-center gap-3">
-        {/* Text input */}
+
         <input
           className="flex-1 bg-transparent border-none outline-none font-mono text-[15px] text-[#f0f0f0] placeholder:text-white/20 caret-[#e8ff47]"
           placeholder={platform === "X" ? "enter x handle..." : "linkedin.com/in/..."}
@@ -26,7 +26,7 @@ export default function IdleIsland({
           autoFocus
         />
 
-        {/* Platform toggle */}
+
         <div className="flex items-center bg-white/4 border border-white/7 rounded-full p-1 gap-0.5 shrink-0">
           <button
             onClick={() => onPlatformChange("X")}
@@ -58,7 +58,7 @@ export default function IdleIsland({
           </button>
         </div>
 
-        {/* Go button */}
+
         <button
           onClick={onSubmit}
           disabled={!handle.trim()}

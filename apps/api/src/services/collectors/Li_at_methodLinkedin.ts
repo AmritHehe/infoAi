@@ -91,7 +91,6 @@ export async function collectLinkedInProfile(
 
         const allH2s = Array.from(document.querySelectorAll("h2"));
 
-        // ── Name ──
         const skipWords = [
           "notification", "About", "Activity", "Education", "Experience",
           "Skills", "Projects", "Interests", "People", "might", "Ad ",
@@ -103,7 +102,6 @@ export async function collectLinkedInProfile(
         });
         const name = nameH2?.textContent?.trim() ?? null;
 
-        // ── Headline ──
         const nameIdx = bodyLines.findIndex(l => l === name);
         const headline = nameIdx >= 0
           ? bodyLines.slice(nameIdx + 1).find(l =>
@@ -118,7 +116,6 @@ export async function collectLinkedInProfile(
             ) ?? null
           : null;
 
-        // ── Location ──
         const locationKeywords = [
           "Area", "India", "Delhi", "Mumbai", "Bangalore",
           "Hyderabad", "Pune", "Chennai", "Kolkata", "Noida",
@@ -128,17 +125,14 @@ export async function collectLinkedInProfile(
           locationKeywords.some(k => l.includes(k)) && l.length < 60
         ) ?? null;
 
-        // ── Profile image — 400x400 profile photo ──
         const allImgs = Array.from(document.querySelectorAll("img"));
         const profileImgs = allImgs.filter(img =>
           img.src.includes("media.licdn.com") &&
           img.src.includes("profile-displayphoto")
         );
-        // Sort by natural size descending — pick largest
         profileImgs.sort((a, b) => (b.naturalWidth ?? 0) - (a.naturalWidth ?? 0));
         const image = profileImgs[0]?.src ?? null;
 
-        // ── About ──
         const aboutH2 = allH2s.find(h => h.textContent?.trim() === "About");
         let aboutContainer: Element | null = aboutH2 ?? null;
         for (let i = 0; i < 6; i++) {
@@ -157,7 +151,6 @@ export async function collectLinkedInProfile(
           : [];
         const about = aboutSpans[0] ?? null;
 
-        // ── Section parser — first occurrence only ──
         const targetSections = ["Experience", "Education", "Skills", "Projects"];
         const sectionStarts: { name: string; idx: number }[] = [];
         bodyLines.forEach((line, idx) => {
@@ -177,7 +170,6 @@ export async function collectLinkedInProfile(
           return bodyLines.slice(section.idx + 1, endIdx);
         };
 
-        // ── Education ──
         const rawEduLines = getSectionLines("Education");
         const cleanEduLines = rawEduLines.filter(l =>
           l.length > 2 &&
@@ -200,7 +192,6 @@ export async function collectLinkedInProfile(
           i += years ? 3 : 2;
         }
 
-        // ── Experience ──
         const rawExpLines = getSectionLines("Experience");
         const cleanExpLines = rawExpLines.filter(l =>
           l.length > 2 &&
@@ -221,7 +212,6 @@ export async function collectLinkedInProfile(
           j += duration ? 3 : 2;
         }
 
-        // ── Skills — stop at Interests section ──
         const rawSkillLines = getSectionLines("Skills");
         const hardStopWords = [
           "Interests", "Top Voices", "Companies", "Schools",
@@ -279,7 +269,7 @@ export async function collectLinkedInProfile(
         years: e.years ?? null,
       }));
 
-      console.log(`[LinkedIn] ✅ ${scraped.name} — exp: ${experience.length}, edu: ${education.length}, skills: ${scraped.skills.length}`);
+      console.log(`[LinkedIn] ${scraped.name} — exp: ${experience.length}, edu: ${education.length}, skills: ${scraped.skills.length}`);
 
       result = {
         platform: "linkedin",

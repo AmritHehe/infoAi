@@ -26,11 +26,11 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
 
   return (
     <>
-      {/* Messages */}
+ 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scrollbar-thin scrollbar-thumb-white/7 scrollbar-track-transparent">
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-2.5 animate-[msg-in_0.25s_ease_forwards] ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-            {/* Dot */}
+     
             <div className={`
               w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] mt-0.5
               ${msg.role === "assistant"
@@ -41,7 +41,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
               {msg.role === "assistant" ? "✦" : "◎"}
             </div>
 
-            {/* Bubble */}
+
             <div className={`
               max-w-[85%] px-4 py-3 rounded-2xl font-mono text-[13px] leading-relaxed
               ${msg.role === "assistant"
@@ -109,7 +109,6 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
           </div>
         ))}
 
-        {/* Typing indicator */}
         {isSending && (
           <div className="flex gap-2.5">
             <div className="w-6 h-6 rounded-full shrink-0 bg-[rgba(232,255,71,0.1)] text-[#e8ff47] border border-[rgba(232,255,71,0.2)] flex items-center justify-center text-[11px]">
@@ -132,7 +131,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
         <div ref={bottomRef} />
       </div>
 
-      {/* Suggestions — only on first message */}
+
       {messages.length === 1 && (
         <div className="flex flex-wrap gap-1.5 px-4 pb-3 shrink-0">
           {SUGGESTIONS[platform].map((q) => (

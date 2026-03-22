@@ -44,7 +44,7 @@ export default function LoadingIsland({ handle, platform, step, onStepChange }: 
           </div>
         </div>
 
-        {/* Progress bar */}
+
         <div className="h-px bg-white/7 rounded-full overflow-hidden">
           <div className="h-full bg-[#e8ff47] rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite] origin-left" />
         </div>

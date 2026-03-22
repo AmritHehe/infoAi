@@ -33,7 +33,6 @@ export async function callOpenRouter(
   return result.choices[0]?.message?.content ?? "Sorry, I could not generate a response.";
 }
 
-// ---- helper: build system prompt from profile data ----
 export function buildSystemPrompt(profile: any): string {
   const data = profile.Data as any;
   const platform = profile.platform;

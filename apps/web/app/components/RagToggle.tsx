@@ -52,7 +52,7 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/7 shrink-0 bg-white/2">
 
-      {/* Left — index status + button */}
+
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {indexState === "checking" && (
           <span className="font-mono text-[11px] text-white/20 flex items-center gap-1.5">
@@ -101,7 +101,7 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
         )}
       </div>
 
-      {/* Right — RAG mode toggle (only when indexed) */}
+
       {indexState === "indexed" && (
         <div className="flex items-center gap-2 shrink-0">
           <span className="font-mono text-[10px] text-white/20 uppercase tracking-widest">

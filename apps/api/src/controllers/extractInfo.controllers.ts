@@ -20,7 +20,7 @@ export async function ExtractUserInfoController(req: Request, res: Response) {
   const dbHandle = normalizedHandle.toLowerCase();
 
   try {
-    // 1. Check DB cache first — avoid unnecessary API calls
+
     const existing = await prisma.profile.findUnique({
       where: { platform_handle: { platform, handle: dbHandle } },
     });
@@ -29,20 +29,19 @@ export async function ExtractUserInfoController(req: Request, res: Response) {
       return res.json({ success: true, profile: existing, source: "cache" });
     }
 
-    // 2. Collect from platform
+
     const profileData =
       platform === "X"
         ? await collectTwitterProfile(dbHandle)
         : await collectLinkedInProfile(handle);
 
-    // 3. Check for collection errors
+
     if ("error" in profileData) {
       return res.status(404).json({ error: profileData.error });
     }
 
-    // 4. Upsert into DB (handles race conditions between two requests)
-    // Cast to `any` — Prisma's Json type requires an index signature which
-    // our typed interfaces intentionally don't have.
+    // 4. Upsert into DB handles race conditions between two requests
+
     const profile = await prisma.profile.upsert({
       where: {
         platform_handle: { platform, handle: dbHandle },

@@ -29,7 +29,7 @@ export default function ChatInput({ value, onChange, onSend, disabled, ragMode }
           autoFocus
           disabled={disabled}
         />
-        {/* RAG indicator inside input */}
+
         {ragMode && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-accent/40 uppercase tracking-widest pointer-events-none">
             rag

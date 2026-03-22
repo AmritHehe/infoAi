@@ -15,7 +15,7 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
 
   return (
     <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/7 shrink-0">
-      {/* Avatar */}
+
       <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-white/7 flex items-center justify-center text-sm font-bold border border-white/7">
         {d?.profileImageUrl
           ? <img src={d.profileImageUrl} alt="" className="w-full h-full object-cover" />
@@ -23,7 +23,7 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
         }
       </div>
 
-      {/* Meta */}
+
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold truncate">{d?.name ?? handle}</p>
         <p className="text-[11px] font-mono text-white/30 mt-0.5 truncate">
@@ -33,7 +33,7 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
         </p>
       </div>
 
-      {/* Platform badge */}
+
       <span className={`
         shrink-0 text-[10px] font-mono font-medium px-2 py-1 rounded-full
         ${platform === "X"
@@ -44,7 +44,7 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
         {platform === "X" ? "𝕏 twitter" : "in linkedin"}
       </span>
 
-      {/* Sign out */}
+
       <button
         onClick={onSignOut}
         title="Sign out"
@@ -53,7 +53,7 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
         ↪
       </button>
 
-      {/* Reset / new search */}
+
       <button
         onClick={onReset}
         title="New search"
