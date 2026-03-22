@@ -53,11 +53,11 @@ export default function AuthPage() {
         if (!signinRes.ok) throw new Error(signinData.message ?? "Sign in failed.");
         localStorage.setItem("token", signinData.data.token);
         localStorage.setItem("email", email);
-        router.push("/home");
+        router.push("/");
       } else {
         localStorage.setItem("token", data.data.token);
         localStorage.setItem("email", email);
-        router.push("/home");
+        router.push("/");
       }
     } catch (err: any) {
       setError(err.message ?? "Request failed.");

@@ -1,22 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useChat } from "./hooks/useChat";
 import { isAuthenticated, clearToken } from "./hooks/useAuth";
-import AuthModal from "./components/AuthModal";
-import IdleIsland from "./components/Island/IdleIsland";
 import LoadingIsland from "./components/Island/LoadingIsland";
 import ChatIsland from "./components/Island/ChatIsland";
+import IdleIsland from "./components/Island/IdleIsland";
+import SessionsIsland from "./components/Island/SessionsIsland";
 
 export default function HomePage() {
+  const router = useRouter();
   const [authed, setAuthed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
-  // Wait for localStorage to be available
   useEffect(() => {
-    setAuthed(isAuthenticated());
+    const ok = isAuthenticated();
+    if (!ok) {
+      router.replace("/auth");
+    } else {
+      setAuthed(true);
+    }
     setHydrated(true);
-  }, []);
+  }, [router]);
 
   const {
     platform, setPlatform,
@@ -28,21 +34,24 @@ export default function HomePage() {
     input, setInput,
     isSending,
     error,
-    ragMode, 
+    ragMode,
     setRagMode,
+    pastSessions,
+    isLoadingSessions,
     handleExtract,
     handleSend,
     handleReset,
+    handleShowSessions,
+    handleResumeSession,
   } = useChat();
 
   const handleSignOut = () => {
     clearToken();
-    setAuthed(false);
-    handleReset();
+    router.replace("/auth");
   };
 
-  // Avoid hydration mismatch
-  if (!hydrated) return null;
+  // Render nothing until hydration + auth check finishes
+  if (!hydrated || !authed) return null;
 
   return (
     <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
@@ -68,31 +77,15 @@ export default function HomePage() {
         }}
       />
 
-      {/* ── NOT AUTHENTICATED — show auth modal ── */}
-      {!authed && (
-        <div className="w-full max-w-sm flex flex-col items-center gap-6 animate-fade-up">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 border border-accent rounded-lg flex items-center justify-center font-mono text-sm text-accent">
-              ⟡
-            </div>
-            <span className="font-mono text-[13px] font-semibold tracking-widest uppercase text-white/40">
-              Digital Footprint
-            </span>
-          </div>
+      <div className={`
+        w-full flex flex-col items-center gap-4
+        transition-all duration-500
+        ${stage === "chat" ? "max-w-2xl" : "max-w-140"}
+      `}>
 
-          <AuthModal onSuccess={() => setAuthed(true)} />
-        </div>
-      )}
-
-      {/* ── AUTHENTICATED — show main app ── */}
-      {authed && (
-        <div className={`
-          w-full flex flex-col items-center gap-4
-          transition-all duration-500
-          ${stage === "chat" ? "max-w-2xl" : "max-w-140"}
-        `}>
-          {stage === "idle" && (
+        {/* IDLE */}
+        {stage === "idle" && (
+          <>
             <IdleIsland
               handle={handle}
               platform={platform}
@@ -100,51 +93,70 @@ export default function HomePage() {
               onPlatformChange={setPlatform}
               onSubmit={handleExtract}
             />
-          )}
-
-          {stage === "loading" && (
-            <LoadingIsland
-              handle={handle}
-              platform={platform}
-              step={loadingStep}
-              onStepChange={setLoadingStep}
-            />
-          )}
-
-          {stage === "chat" && profileData && (
-            <ChatIsland
-              profileData={profileData}
-              platform={platform}
-              handle={handle}
-              messages={messages}
-              input={input}
-              isSending={isSending}
-              ragMode={ragMode} 
-              onInputChange={setInput}
-              onSend={handleSend}
-              onReset={handleReset}
-              onSignOut={handleSignOut}
-              onRagToggle={setRagMode} 
-            />
-          )}
-
-          {error && (
-            <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-130 text-center">
-              ⚠ {error}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleShowSessions}
+                disabled={isLoadingSessions}
+                className="font-mono text-[11px] text-white/30 hover:text-white/60 transition-colors cursor-pointer bg-transparent border-none disabled:opacity-40"
+              >
+                {isLoadingSessions ? "loading…" : "↑ past sessions"}
+              </button>
+              <span className="text-white/10 font-mono text-xs">·</span>
+              <button
+                onClick={handleSignOut}
+                className="font-mono text-[11px] text-white/20 hover:text-white/40 transition-colors cursor-pointer bg-transparent border-none"
+              >
+                sign out
+              </button>
             </div>
-          )}
+          </>
+        )}
 
-          {/* Sign out link on idle */}
-          {stage === "idle" && (
-            <button
-              onClick={handleSignOut}
-              className="font-mono text-[11px] text-white/20 hover:text-white/40 transition-colors cursor-pointer bg-transparent border-none"
-            >
-              sign out
-            </button>
-          )}
-        </div>
-      )}
+        {/* SESSIONS */}
+        {stage === "sessions" && (
+          <SessionsIsland
+            sessions={pastSessions}
+            isLoading={isLoadingSessions}
+            onResume={handleResumeSession}
+            onBack={handleReset}
+          />
+        )}
+
+        {/* LOADING */}
+        {stage === "loading" && (
+          <LoadingIsland
+            handle={handle}
+            platform={platform}
+            step={loadingStep}
+            onStepChange={setLoadingStep}
+          />
+        )}
+
+        {/* CHAT */}
+        {stage === "chat" && profileData && (
+          <ChatIsland
+            profileData={profileData}
+            platform={platform}
+            handle={handle}
+            messages={messages}
+            input={input}
+            isSending={isSending}
+            ragMode={ragMode}
+            onInputChange={setInput}
+            onSend={handleSend}
+            onReset={handleReset}
+            onSignOut={handleSignOut}
+            onRagToggle={setRagMode}
+          />
+        )}
+
+        {/* Error pill */}
+        {error && (
+          <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-130 text-center">
+            ⚠ {error}
+          </div>
+        )}
+      </div>
 
       {/* Footer */}
       <p className="fixed bottom-5 font-mono text-[11px] text-white/20 tracking-[0.05em]">

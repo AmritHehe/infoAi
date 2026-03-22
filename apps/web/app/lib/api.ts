@@ -83,4 +83,10 @@ export async function sendRagMessage(sessionId: string, message: string) {
   if (!res.ok) throw new Error(data.error ?? "Failed to get RAG reply");
   return data.reply as string;
 }
- 
+
+export async function getSessions(userId: string) {
+  const res = await fetch(`${API_BASE}/sessions?userId=${userId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Failed to fetch sessions");
+  return data.sessions;
+}

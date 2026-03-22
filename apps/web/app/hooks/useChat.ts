@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Platform, Stage, Message, ProfileData } from "../types";
-import { getUserInfo, startSession, sendMessage, sendRagMessage } from "../lib/api";
+import { Platform, Stage, Message, ProfileData, SessionSummary } from "../types";
+import { getUserInfo, startSession, sendMessage, sendRagMessage, getSessions } from "../lib/api";
 import { getUserIdFromToken } from "./useAuth";
 
 export function useChat() {
@@ -16,7 +16,9 @@ export function useChat() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ragMode, setRagMode] = useState(false); // ← RAG toggle state
+  const [ragMode, setRagMode] = useState(false);
+  const [pastSessions, setPastSessions] = useState<SessionSummary[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
   const handleExtract = useCallback(async () => {
     if (!handle.trim()) return;
@@ -55,18 +57,15 @@ export function useChat() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
-      // ← Route to RAG or standard chat based on toggle
       const reply = ragMode
         ? await sendRagMessage(sessionId, text)
         : await sendMessage(sessionId, text);
-
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err: any) {
-      // Handle not-indexed error specifically
       if (err.message?.includes("not indexed")) {
         setMessages((prev) => [...prev, {
           role: "assistant",
-          content: "⚠ Profile not indexed yet. Click 'index for RAG' above first, then try again.",
+          content: "⚠ Profile not indexed yet. Enable RAG indexing first, then try again.",
         }]);
       } else {
         setMessages((prev) => [...prev, {
@@ -79,6 +78,50 @@ export function useChat() {
     }
   }, [input, isSending, sessionId, ragMode]);
 
+  // ── Open the sessions history panel ──────────────────────────────────────────
+  const handleShowSessions = useCallback(async () => {
+    setIsLoadingSessions(true);
+    setError(null);
+    try {
+      const userId = getUserIdFromToken();
+      if (!userId) throw new Error("Not authenticated");
+      const sessions = await getSessions(userId);
+      setPastSessions(sessions);
+      setStage("sessions");
+    } catch (err: any) {
+      setError(err.message ?? "Failed to load sessions.");
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
+  // ── Resume a past session — load its messages and go straight to chat ────────
+  const handleResumeSession = useCallback((session: SessionSummary) => {
+    const restoredProfile: ProfileData = {
+      id: session.profile.id,
+      platform: session.profile.platform,
+      handle: session.profile.handle,
+      Data: {
+        name: session.profile.name,
+        profileImageUrl: session.profile.profileImageUrl ?? undefined,
+        followersCount: session.profile.followersCount ?? undefined,
+        headline: session.profile.headline ?? undefined,
+        currentRole: session.profile.currentRole ?? undefined,
+        username: session.profile.handle,
+      },
+    };
+    setProfileData(restoredProfile);
+    setHandle(session.profile.handle);
+    setPlatform(session.profile.platform);
+    setSessionId(session.sessionId);
+    setMessages(
+      session.messages.map((m) => ({ role: m.role, content: m.content }))
+    );
+    setRagMode(false);
+    setError(null);
+    setStage("chat");
+  }, []);
+
   const handleReset = useCallback(() => {
     setStage("idle");
     setHandle("");
@@ -87,6 +130,7 @@ export function useChat() {
     setMessages([]);
     setError(null);
     setRagMode(false);
+    setPastSessions([]);
   }, []);
 
   return {
@@ -100,8 +144,12 @@ export function useChat() {
     isSending,
     error,
     ragMode, setRagMode,
+    pastSessions,
+    isLoadingSessions,
     handleExtract,
     handleSend,
     handleReset,
+    handleShowSessions,
+    handleResumeSession,
   };
 }

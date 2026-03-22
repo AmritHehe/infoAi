@@ -1,5 +1,5 @@
 export type Platform = "X" | "LINKEDIN";
-export type Stage = "idle" | "loading" | "chat";
+export type Stage = "idle" | "loading" | "chat" | "sessions";
 export type MessageRole = "user" | "assistant";
 
 export interface Message {
@@ -32,4 +32,27 @@ export interface ProfileData {
       replies: number;
     }[];
   };
+}
+
+export interface SessionSummary {
+  sessionId: string;
+  createdAt: string;
+  updatedAt: string;
+  profile: {
+    id: string;
+    platform: Platform;
+    handle: string;
+    name: string;
+    headline: string | null;
+    profileImageUrl: string | null;
+    followersCount: number | null;
+    currentRole: string | null;
+  };
+  messageCount: number;
+  lastMessage: {
+    role: MessageRole;
+    content: string;
+    createdAt: string;
+  } | null;
+  messages: { id: string; role: MessageRole; content: string; createdAt: string }[];
 }
