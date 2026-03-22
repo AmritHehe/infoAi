@@ -19,20 +19,19 @@ export function extractUsername(urlOrHandle: string): string {
       const idx = parts.indexOf("in");
       if (idx !== -1 && parts[idx + 1]) {
         const slug = parts[idx + 1].replace(/\/$/, "").trim();
-        console.log(`[LinkedIn] Extracted slug from URL: "${slug}"`);
+        console.log(`[LinkedIn] Extracted slug: "${slug}"`);
         return slug;
       }
     }
   } catch (e) {
-    console.log(`[LinkedIn] URL parse failed, using raw input: "${urlOrHandle}"`);
+    console.log(`[LinkedIn] URL parse failed, using raw: "${urlOrHandle}"`);
   }
   return urlOrHandle.replace(/^\/|\/$/g, "").trim();
 }
-// helper to convert object or array to array
+
 function toArray(val: any): any[] {
   if (!val) return [];
   if (Array.isArray(val)) return val;
-  // convert {"0": {...}, "1": {...}} → [{...}, {...}]
   return Object.values(val);
 }
 
@@ -40,7 +39,9 @@ export async function collectLinkedInProfile(
   urlOrHandle: string
 ): Promise<LinkedInProfile | { error: string }> {
   const username = extractUsername(urlOrHandle);
-  const linkedinUrl = `https://www.linkedin.com/in/${username}/`;
+
+  // ← always use in.linkedin.com — bypasses auth wall for public profiles
+  const linkedinUrl = `https://in.linkedin.com/in/${username}/`;
 
   console.log(`[LinkedIn] Fetching: "${linkedinUrl}"`);
 
@@ -52,17 +53,17 @@ export async function collectLinkedInProfile(
     });
 
     console.log(`[LinkedIn] Status: ${res.status}`);
+    console.log(`[LinkedIn] Raw response:`, JSON.stringify(res.data, null, 2));
 
     const d = res.data?.data ?? res.data;
 
     if (!d?.name) {
-      console.log(`[LinkedIn] No name found — keys:`, Object.keys(d ?? {}));
+      console.log(`[LinkedIn] No name in response — keys:`, Object.keys(d ?? {}));
       return { error: `LinkedIn profile '${username}' not found or is private.` };
     }
 
     console.log(`[LinkedIn] Found: "${d.name}"`);
 
-    // ← use toArray() for all fields that come back as objects
     const experienceRaw = toArray(d.experience);
     const educationRaw = toArray(d.education);
     const articlesRaw = toArray(d.articles);
@@ -123,5 +124,3 @@ export async function collectLinkedInProfile(
     return { error: `Failed to fetch LinkedIn data: ${err?.message}` };
   }
 }
-
-
