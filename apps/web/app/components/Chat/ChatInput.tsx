@@ -18,7 +18,7 @@ export default function ChatInput({ value, onChange, onSend, disabled, ragMode }
             text-[#f0f0f0] outline-none placeholder:text-white/20 transition-colors
             disabled:opacity-40
             ${ragMode
-              ? "border-[#e8ff47]/20 focus:border-[#e8ff47]/40"
+              ? "border-accent/20 focus:border-accent/40"
               : "border-white/7 focus:border-white/15"
             }
           `}
@@ -31,7 +31,7 @@ export default function ChatInput({ value, onChange, onSend, disabled, ragMode }
         />
         {/* RAG indicator inside input */}
         {ragMode && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-[#e8ff47]/40 uppercase tracking-widest pointer-events-none">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[9px] text-accent/40 uppercase tracking-widest pointer-events-none">
             rag
           </span>
         )}
@@ -45,8 +45,8 @@ export default function ChatInput({ value, onChange, onSend, disabled, ragMode }
           shrink-0 border-none cursor-pointer transition-all
           hover:scale-105 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100
           ${ragMode
-            ? "bg-[#e8ff47] text-black shadow-[0_0_12px_rgba(232,255,71,0.3)]"
-            : "bg-[#e8ff47] text-black"
+            ? "bg-accent text-black shadow-[0_0_12px_rgba(232,255,71,0.3)]"
+            : "bg-accent text-black"
           }
         `}
       >

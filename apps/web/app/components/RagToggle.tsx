@@ -50,7 +50,7 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/7 shrink-0 bg-white/[0.02]">
+    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/7 shrink-0 bg-white/2">
 
       {/* Left — index status + button */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -64,15 +64,15 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
         {indexState === "idle" && (
           <button
             onClick={handleIndex}
-            className="font-mono text-[11px] text-[#e8ff47]/70 border border-[#e8ff47]/20 bg-[#e8ff47]/5 px-2.5 py-1 rounded-full hover:bg-[#e8ff47]/10 hover:text-[#e8ff47] transition-all cursor-pointer"
+            className="font-mono text-[11px] text-accent/70 border border-accent/20` bg-accent/5 px-2.5 py-1 rounded-full hover:bg-accent/10 hover:text-accent transition-all cursor-pointer"
           >
             ⬡ index for RAG
           </button>
         )}
 
         {indexState === "indexing" && (
-          <span className="font-mono text-[11px] text-[#e8ff47]/60 flex items-center gap-1.5">
-            <span className="w-3 h-3 border border-[#e8ff47]/30 border-t-[#e8ff47] rounded-full animate-spin" />
+          <span className="font-mono text-[11px] text-accent/60 flex items-center gap-1.5">
+            <span className="w-3 h-3 border border-accent/30 border-t-accent rounded-full animate-spin" />
             indexing chunks...
           </span>
         )}
@@ -112,7 +112,7 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
             className={`
               relative w-9 h-5 rounded-full border transition-all duration-200 cursor-pointer
               ${ragMode
-                ? "bg-[#e8ff47] border-[#e8ff47]"
+                ? "bg-accent border-accent"
                 : "bg-transparent border-white/15"
               }
             `}
@@ -120,7 +120,7 @@ export default function RagToggle({ profileId, ragMode, onToggle }: Props) {
             <span className={`
               absolute top-0.5 w-4 h-4 rounded-full transition-all duration-200
               ${ragMode
-                ? "left-[18px] bg-black"
+                ? "left-4.5 bg-black"
                 : "left-0.5 bg-white/30"
               }
             `} />

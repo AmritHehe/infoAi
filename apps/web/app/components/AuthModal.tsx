@@ -60,7 +60,7 @@ export default function AuthModal({ onSuccess }: Props) {
             >
               {m === "signin" ? "Sign In" : "Sign Up"}
               {mode === m && (
-                <span className="absolute bottom-0 left-0 right-0 h-px bg-[#e8ff47]" />
+                <span className="absolute bottom-0 left-0 right-0 h-px bg-accent" />
               )}
             </button>
           ))}
@@ -121,7 +121,7 @@ export default function AuthModal({ onSuccess }: Props) {
           <button
             onClick={handleSubmit}
             disabled={loading || !email || !password || (mode === "signup" && !name)}
-            className="mt-1 w-full py-3 bg-[#e8ff47] text-black font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-all duration-150 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(232,255,71,0.2)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="mt-1 w-full py-3 bg-accent text-black font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-all duration-150 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(232,255,71,0.2)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             {loading ? (
               <>

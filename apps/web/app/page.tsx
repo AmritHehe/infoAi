@@ -45,11 +45,11 @@ export default function HomePage() {
   if (!hydrated) return null;
 
   return (
-    <div className="min-h-screen bg-[#080808] text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
 
       {/* Grain overlay */}
       <div
-        className="fixed inset-0 pointer-events-none z-[100] opacity-[0.025]"
+        className="fixed inset-0 pointer-events-none z-100 opacity-[0.025]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           backgroundSize: "256px",
@@ -70,10 +70,10 @@ export default function HomePage() {
 
       {/* ── NOT AUTHENTICATED — show auth modal ── */}
       {!authed && (
-        <div className="w-full max-w-sm flex flex-col items-center gap-6 animate-[fade-up_0.5s_ease_forwards]">
+        <div className="w-full max-w-sm flex flex-col items-center gap-6 animate-fade-up">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 border border-[#e8ff47] rounded-lg flex items-center justify-center font-mono text-sm text-[#e8ff47]">
+            <div className="w-8 h-8 border border-accent rounded-lg flex items-center justify-center font-mono text-sm text-accent">
               ⟡
             </div>
             <span className="font-mono text-[13px] font-semibold tracking-widest uppercase text-white/40">
@@ -90,7 +90,7 @@ export default function HomePage() {
         <div className={`
           w-full flex flex-col items-center gap-4
           transition-all duration-500
-          ${stage === "chat" ? "max-w-2xl" : "max-w-[560px]"}
+          ${stage === "chat" ? "max-w-2xl" : "max-w-140"}
         `}>
           {stage === "idle" && (
             <IdleIsland
@@ -129,7 +129,7 @@ export default function HomePage() {
           )}
 
           {error && (
-            <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-[520px] text-center">
+            <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-130 text-center">
               ⚠ {error}
             </div>
           )}
