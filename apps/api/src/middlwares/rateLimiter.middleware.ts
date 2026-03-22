@@ -10,7 +10,7 @@ interface RateLimitData {
 const userStore = new Map<string, RateLimitData>();
 
 const WINDOW_MS = 60 * 1000; // 1 minute window
-const MAX_REQUESTS = 10;     // maximum 10 requests per minute
+const MAX_REQUESTS = 30;     // maximum 10 requests per minute
 
 export function RateLimiter(req: Request, res: Response, next: NextFunction) {
   const userId = req.userId;
