@@ -31,7 +31,7 @@ export default function LoadingIsland({ handle, platform, step, onStepChange }: 
       <div className="flex flex-col gap-4">
         {/* Top row */}
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-full border border-[#e8ff47] flex items-center justify-center text-base text-[#e8ff47] shrink-0 animate-spin [animation-duration:3s]">
+          <div className="w-10 h-10 rounded-full border border-accent flex items-center justify-center text-base text-accent shrink-0 animate-spin [animation-duration:3s]">
             {STEPS[step].icon}
           </div>
           <div className="flex-1">
@@ -46,7 +46,7 @@ export default function LoadingIsland({ handle, platform, step, onStepChange }: 
 
 
         <div className="h-px bg-white/7 rounded-full overflow-hidden">
-          <div className="h-full bg-[#e8ff47] rounded-full animate-[indeterminate_1.4s_ease-in-out_infinite] origin-left" />
+          <div className="h-full bg-accent rounded-full animate-indeterminate origin-left" />
         </div>
       </div>
     </div>

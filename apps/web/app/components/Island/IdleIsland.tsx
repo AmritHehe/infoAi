@@ -18,7 +18,7 @@ export default function IdleIsland({
       <div className="flex items-center gap-3">
 
         <input
-          className="flex-1 bg-transparent border-none outline-none font-mono text-[15px] text-[#f0f0f0] placeholder:text-white/20 caret-[#e8ff47]"
+          className="flex-1 bg-transparent border-none outline-none font-mono text-[15px] text-[#f0f0f0] placeholder:text-white/20 caret-accent"
           placeholder={platform === "X" ? "enter x handle..." : "linkedin.com/in/..."}
           value={handle}
           onChange={(e) => onHandleChange(e.target.value)}
@@ -62,7 +62,7 @@ export default function IdleIsland({
         <button
           onClick={onSubmit}
           disabled={!handle.trim()}
-          className="w-11 h-11 rounded-full bg-[#e8ff47] text-black text-lg flex items-center justify-center shrink-0 border-none cursor-pointer transition-all duration-150 hover:scale-105 active:scale-97 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="w-11 h-11 rounded-full bg-accent text-black text-lg flex items-center justify-center shrink-0 border-none cursor-pointer transition-all duration-150 hover:scale-105 active:scale-97 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           →
         </button>

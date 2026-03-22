@@ -66,9 +66,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-bg text-[#f0f0f0] font-sans flex flex-col items-center justify-center p-6 relative">
       <div
-        className="fixed inset-0 pointer-events-none z-[100] opacity-[0.03]"
+        className="fixed inset-0 pointer-events-none z-100 opacity-[0.03]"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
           backgroundSize: "256px",
@@ -86,7 +86,7 @@ export default function AuthPage() {
         }}
       />
 
-      <main className="relative z-10 w-full max-w-[400px] flex flex-col items-center animate-fade-up">
+      <main className="relative z-10 w-full max-w-100 flex flex-col items-center animate-fade-up">
 
         <div className="flex flex-col items-center text-center gap-1.5 mb-8">
           <h1 className="text-[28px] font-bold tracking-tight text-[#f0f0f0]">
@@ -106,23 +106,23 @@ export default function AuthPage() {
               onClick={() => { setMode("signin"); setError(null); setSuccess(null); }}
             >
               Sign In
-              {mode === "signin" && <div className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-accent" />}
+              {mode === "signin" && <div className="absolute -bottom-px left-0 right-0 h-px bg-accent" />}
             </button>
             <button
               className={`flex-1 p-4 bg-transparent border-none cursor-pointer font-mono text-xs font-medium tracking-[0.06em] uppercase transition-all relative ${mode === "signup" ? "text-[#f0f0f0]" : "text-white/40 hover:text-white/60"}`}
               onClick={() => { setMode("signup"); setError(null); setSuccess(null); }}
             >
               Sign Up
-              {mode === "signup" && <div className="absolute bottom-[-1px] left-0 right-0 h-[1px] bg-accent" />}
+              {mode === "signup" && <div className="absolute -bottom-px left-0 right-0 h-px bg-accent" />}
             </button>
           </div>
 
           <div className="flex flex-col gap-3.5 px-6 py-7">
-            <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${mode === "signup" ? "max-h-[80px] opacity-100" : "max-h-0 opacity-0 pointer-events-none mb-[-14px]"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${mode === "signup" ? "max-h-20 opacity-100" : "max-h-0 opacity-0 pointer-events-none -mb-3.5"}`}>
               <div className="flex flex-col gap-1.5">
-                <label className="font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-white/40">Name</label>
+                <label className="font-mono text-[10px] font-medium tracking-widest uppercase text-white/40">Name</label>
                 <input
-                  className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-[11px] font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
+                  className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-2.75 font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
                   type="text"
                   placeholder="your name"
                   value={name}
@@ -132,9 +132,9 @@ export default function AuthPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-white/40">Email</label>
+              <label className="font-mono text-[10px] font-medium tracking-widest uppercase text-white/40">Email</label>
               <input
-                className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-[11px] font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
+                className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-2.75 font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
@@ -144,9 +144,9 @@ export default function AuthPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="font-mono text-[10px] font-medium tracking-[0.1em] uppercase text-white/40">Password</label>
+              <label className="font-mono text-[10px] font-medium tracking-widest uppercase text-white/40">Password</label>
               <input
-                className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-[11px] font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
+                className="w-full bg-[#161616] border border-white/7 rounded-[10px] px-3.5 py-2.75 font-mono text-[13px] text-[#f0f0f0] outline-none transition-colors focus:border-white/15 focus:bg-[rgba(255,255,255,0.03)] placeholder:text-white/30"
                 type="password"
                 placeholder="••••••••"
                 value={password}
@@ -156,7 +156,7 @@ export default function AuthPage() {
             </div>
 
             <button
-              className="mt-1 w-full p-[13px] bg-accent text-black border-none rounded-[10px] cursor-pointer font-['Syne',sans-serif] text-[14px] font-bold tracking-[0.02em] transition-all flex items-center justify-center gap-2 hover:not-disabled:-translate-y-[1px] hover:not-disabled:shadow-[0_8px_24px_rgba(232,255,71,0.2)] active:not-disabled:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="mt-1 w-full p-3.25 bg-accent text-black border-none rounded-[10px] cursor-pointer font-sans text-[14px] font-bold tracking-[0.02em] transition-all flex items-center justify-center gap-2 hover:not-disabled:-translate-y-pxhover:not-disabled:shadow-[0_8px_24px_rgba(232,255,71,0.2)] active:not-disabled:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={handleSubmit}
               disabled={loading || !email || !password || (mode === "signup" && !name)}
             >

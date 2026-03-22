@@ -29,12 +29,12 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
  
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scrollbar-thin scrollbar-thumb-white/7 scrollbar-track-transparent">
         {messages.map((msg, i) => (
-          <div key={i} className={`flex gap-2.5 animate-[msg-in_0.25s_ease_forwards] ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+          <div key={i} className={`flex gap-2.5 animate-msg-in ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
      
             <div className={`
               w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[11px] mt-0.5
               ${msg.role === "assistant"
-                ? "bg-[rgba(232,255,71,0.1)] text-[#e8ff47] border border-[rgba(232,255,71,0.2)]"
+                ? "bg-[rgba(232,255,71,0.1)] text-accent border border-[rgba(232,255,71,0.2)]"
                 : "bg-white/8 text-white/30"
               }
             `}>
@@ -46,7 +46,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
               max-w-[85%] px-4 py-3 rounded-2xl font-mono text-[13px] leading-relaxed
               ${msg.role === "assistant"
                 ? "bg-white/4 border border-white/7 rounded-tl-sm text-[#f0f0f0]"
-                : "bg-[#e8ff47] text-black font-medium rounded-tr-sm break-words"
+                : "bg-accent text-black font-medium rounded-tr-sm wrap-break-word"
               }
             `}>
               {msg.role === "assistant" ? (
@@ -57,7 +57,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
                       p: ({ node, ...props }) => <p className="mb-2.5 last:mb-0 leading-relaxed" {...props} />,
                       a: ({ node, ...props }) => (
                         <a
-                          className="text-[#e8ff47] underline decoration-white/20 underline-offset-4 hover:decoration-[#e8ff47]/60 transition-colors"
+                          className="text-accent underline decoration-white/20 underline-offset-4 hover:decoration-accent/60 transition-colors"
                           target="_blank"
                           rel="noreferrer noopener"
                           {...props}
@@ -88,7 +88,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
                       h2: ({ node, ...props }) => <h2 className="font-bold text-[15px] text-white/90 mt-4 mb-2" {...props} />,
                       h3: ({ node, ...props }) => <h3 className="font-bold text-[14px] text-white/80 mt-3 mb-1.5" {...props} />,
                       blockquote: ({ node, ...props }) => (
-                        <blockquote className="border-l-2 border-[#e8ff47]/50 pl-3.5 my-3 text-white/60 italic" {...props} />
+                        <blockquote className="border-l-2 border-accent/50 pl-3.5 my-3 text-white/60 italic" {...props} />
                       ),
                       table: ({ node, ...props }) => (
                         <div className="w-full overflow-x-auto mb-3">
@@ -111,7 +111,7 @@ export default function ChatMessages({ messages, isSending, platform, onSuggesti
 
         {isSending && (
           <div className="flex gap-2.5">
-            <div className="w-6 h-6 rounded-full shrink-0 bg-[rgba(232,255,71,0.1)] text-[#e8ff47] border border-[rgba(232,255,71,0.2)] flex items-center justify-center text-[11px]">
+            <div className="w-6 h-6 rounded-full shrink-0 bg-[rgba(232,255,71,0.1)] text-accent border border-[rgba(232,255,71,0.2)] flex items-center justify-center text-[11px]">
               ✦
             </div>
             <div className="px-3.5 py-3 bg-white/4 border border-white/7 rounded-2xl rounded-tl-sm">

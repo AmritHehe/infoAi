@@ -94,7 +94,7 @@ export default function HomePage() {
                 </svg>
               </h1>
               
-              <p className="text-[14px] text-white/40 max-w-[380px] leading-relaxed">
+              <p className="text-[14px] text-white/40 max-w-95 leading-relaxed">
                 Paste a public profile link to instantly extract their data and start asking questions.
               </p>
             </div>
