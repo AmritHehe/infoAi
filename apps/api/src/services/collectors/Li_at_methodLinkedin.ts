@@ -1,4 +1,5 @@
-import { PlaywrightCrawler } from "crawlee";
+import { PlaywrightCrawler , Configuration} from "crawlee";
+import { MemoryStorage } from "@crawlee/memory-storage";
 import type { LinkedInProfile } from "../../types";
 
 export function extractUsername(urlOrHandle: string): string {
@@ -15,6 +16,7 @@ export function extractUsername(urlOrHandle: string): string {
   return urlOrHandle.replace(/^\/|\/$/g, "").trim();
 }
 
+
 export async function collectLinkedInProfile(
   urlOrHandle: string
 ): Promise<LinkedInProfile | { error: string }> {
@@ -27,10 +29,17 @@ export async function collectLinkedInProfile(
 
   console.log(`[LinkedIn] Scraping: ${url}`);
 
+  const config = new Configuration({
+    storageClient: new MemoryStorage(),
+  });
+
   const crawler = new PlaywrightCrawler({
     headless: true,
     maxRequestsPerCrawl: 1,
-    requestHandlerTimeoutSecs: 90,
+    maxRequestRetries: 0,           // ← fail fast, no retries
+    requestHandlerTimeoutSecs: 65,  // ← kill handler after 55s
+    navigationTimeoutSecs: 30,      // ← kill page load after 30s , // ← no disk state, fresh every run
+
     launchContext: {
       launchOptions: {
         args: [
@@ -39,7 +48,8 @@ export async function collectLinkedInProfile(
           "--disable-blink-features=AutomationControlled",
         ],
       },
-    },
+    } ,
+
     preNavigationHooks: [
       async ({ page }) => {
         await page.context().addCookies([{
@@ -75,7 +85,7 @@ export async function collectLinkedInProfile(
         return;
       }
 
-      // Scroll to trigger lazy loading of all sections
+      // Scroll to trigger lazy loading
       for (const pos of [500, 1200, 2000, 3000, 4000, 5000]) {
         await page.evaluate((y) => window.scrollTo(0, y), pos);
         await page.waitForTimeout(600);
@@ -91,6 +101,7 @@ export async function collectLinkedInProfile(
 
         const allH2s = Array.from(document.querySelectorAll("h2"));
 
+        // ── Name ──
         const skipWords = [
           "notification", "About", "Activity", "Education", "Experience",
           "Skills", "Projects", "Interests", "People", "might", "Ad ",
@@ -102,6 +113,7 @@ export async function collectLinkedInProfile(
         });
         const name = nameH2?.textContent?.trim() ?? null;
 
+        // ── Headline ──
         const nameIdx = bodyLines.findIndex(l => l === name);
         const headline = nameIdx >= 0
           ? bodyLines.slice(nameIdx + 1).find(l =>
@@ -116,6 +128,7 @@ export async function collectLinkedInProfile(
             ) ?? null
           : null;
 
+        // ── Location ──
         const locationKeywords = [
           "Area", "India", "Delhi", "Mumbai", "Bangalore",
           "Hyderabad", "Pune", "Chennai", "Kolkata", "Noida",
@@ -125,6 +138,7 @@ export async function collectLinkedInProfile(
           locationKeywords.some(k => l.includes(k)) && l.length < 60
         ) ?? null;
 
+        // ── Profile image ──
         const allImgs = Array.from(document.querySelectorAll("img"));
         const profileImgs = allImgs.filter(img =>
           img.src.includes("media.licdn.com") &&
@@ -133,6 +147,7 @@ export async function collectLinkedInProfile(
         profileImgs.sort((a, b) => (b.naturalWidth ?? 0) - (a.naturalWidth ?? 0));
         const image = profileImgs[0]?.src ?? null;
 
+        // ── About ──
         const aboutH2 = allH2s.find(h => h.textContent?.trim() === "About");
         let aboutContainer: Element | null = aboutH2 ?? null;
         for (let i = 0; i < 6; i++) {
@@ -151,6 +166,7 @@ export async function collectLinkedInProfile(
           : [];
         const about = aboutSpans[0] ?? null;
 
+        // ── Section parser ──
         const targetSections = ["Experience", "Education", "Skills", "Projects"];
         const sectionStarts: { name: string; idx: number }[] = [];
         bodyLines.forEach((line, idx) => {
@@ -170,6 +186,7 @@ export async function collectLinkedInProfile(
           return bodyLines.slice(section.idx + 1, endIdx);
         };
 
+        // ── Education ──
         const rawEduLines = getSectionLines("Education");
         const cleanEduLines = rawEduLines.filter(l =>
           l.length > 2 &&
@@ -179,7 +196,6 @@ export async function collectLinkedInProfile(
           !l.includes("Show all") &&
           !l.match(/^\d{1,3}(,\d{3})*$/)
         );
-
         const education: { school: string; degree: string | null; years: string | null }[] = [];
         let i = 0;
         while (i < cleanEduLines.length && education.length < 5) {
@@ -192,6 +208,7 @@ export async function collectLinkedInProfile(
           i += years ? 3 : 2;
         }
 
+        // ── Experience ──
         const rawExpLines = getSectionLines("Experience");
         const cleanExpLines = rawExpLines.filter(l =>
           l.length > 2 &&
@@ -199,7 +216,6 @@ export async function collectLinkedInProfile(
           !l.includes("Show all") &&
           !l.match(/^\d{1,3}(,\d{3})*$/)
         );
-
         const experience: { title: string; company: string | null; duration: string | null }[] = [];
         let j = 0;
         while (j < cleanExpLines.length && experience.length < 10) {
@@ -212,6 +228,7 @@ export async function collectLinkedInProfile(
           j += duration ? 3 : 2;
         }
 
+        // ── Skills ──
         const rawSkillLines = getSectionLines("Skills");
         const hardStopWords = [
           "Interests", "Top Voices", "Companies", "Schools",
@@ -220,35 +237,23 @@ export async function collectLinkedInProfile(
         const stopIdx = rawSkillLines.findIndex(l =>
           hardStopWords.some(w => l.includes(w))
         );
-        const skills = [
-          ...new Set(
-            rawSkillLines
-              .slice(0, stopIdx > 0 ? stopIdx : rawSkillLines.length)
-              .filter(l =>
-                l.length > 1 &&
-                l.length < 50 &&
-                !l.includes("Show all") &&
-                !l.includes("endorsed") &&
-                !l.includes("follower")
-              )
-          ),
-        ].slice(0, 20);
+        const skills = [...new Set(
+          rawSkillLines
+            .slice(0, stopIdx > 0 ? stopIdx : rawSkillLines.length)
+            .filter(l =>
+              l.length > 1 &&
+              l.length < 50 &&
+              !l.includes("Show all") &&
+              !l.includes("endorsed") &&
+              !l.includes("follower")
+            )
+        )].slice(0, 20);
 
-        return {
-          name, headline, location, image, about,
-          experience, education, skills,
-        };
+        return { name, headline, location, image, about, experience, education, skills };
       });
 
-      console.log(`[LinkedIn] name: "${scraped.name}"`);
-      console.log(`[LinkedIn] headline: "${scraped.headline}"`);
-      console.log(`[LinkedIn] location: "${scraped.location}"`);
-      console.log(`[LinkedIn] about: "${scraped.about}"`);
-      console.log(`[LinkedIn] image: "${scraped.image?.slice(0, 80)}..."`);
+      console.log(`[LinkedIn] name: "${scraped.name}", headline: "${scraped.headline}"`);
       console.log(`[LinkedIn] exp: ${scraped.experience.length}, edu: ${scraped.education.length}, skills: ${scraped.skills.length}`);
-      console.log(`[LinkedIn] education:`, scraped.education);
-      console.log(`[LinkedIn] experience:`, scraped.experience);
-      console.log(`[LinkedIn] skills:`, scraped.skills);
 
       if (!scraped.name) {
         result = { error: `Could not scrape '${username}'.` };
@@ -268,8 +273,6 @@ export async function collectLinkedInProfile(
         field: null,
         years: e.years ?? null,
       }));
-
-      console.log(`[LinkedIn] ${scraped.name} — exp: ${experience.length}, edu: ${education.length}, skills: ${scraped.skills.length}`);
 
       result = {
         platform: "linkedin",
@@ -295,8 +298,20 @@ export async function collectLinkedInProfile(
       console.log(`[LinkedIn] Failed: ${error.message}`);
       result = { error: `Scraping failed: ${error.message}` };
     },
-  });
+  }, config);
 
-  await crawler.run([{ url }]);
-  return result ?? { error: "No result — crawler timed out." };
+  // ← Hard 60s timeout — if crawler hangs, resolve with error
+  const timeoutPromise = new Promise<LinkedInProfile | { error: string }>(
+    (resolve) =>
+      setTimeout(
+        () => resolve({ error: "LinkedIn scraping timed out after 60s. Please try again." }),
+        70000
+      )
+  );
+
+  const crawlerPromise = crawler
+    .run([{ url }])
+    .then(() => result ?? { error: "No result returned from crawler." });
+
+  return Promise.race([crawlerPromise, timeoutPromise]);
 }
