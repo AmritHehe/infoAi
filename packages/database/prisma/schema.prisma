@@ -39,8 +39,8 @@ model Session {
   id        String    @id @default(uuid())
   userId    String
   profileId String
-  user      User      @relation(fields: [userId], references: [id])
-  profile   Profile   @relation(fields: [profileId], references: [id])
+  user      User      @relation(fields: [userId], references: [id] , onDelete: Cascade)
+  profile   Profile   @relation(fields: [profileId], references: [id] , onDelete:  Cascade)
   messages  Message[]
   tokens    Int
   createdAt DateTime  @default(now())

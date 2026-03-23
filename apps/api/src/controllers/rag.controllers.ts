@@ -41,31 +41,42 @@ export async function RAGProfileStatusController(req: Request, res: Response) {
   }
 }
 
-export async function  RAGChatController( req : Request  , res : Response ){
+export async function RAGChatController(req: Request, res: Response) {
   const parsed = RagChatSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
   }
  
-  const { sessionId, message } = parsed.data;
+  const { sessionId, message, history: clientHistory } = parsed.data;
  
   try {
+    const isGuest = sessionId.startsWith("guest_");
+    let profileId: string;
+    let history: { role: "user" | "assistant"; content: string }[];
 
-    const session = await prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        profile: true,
-        messages: { orderBy: { createdAt: "asc" } },
-      },
-    });
- 
-    if (!session) {
-      return res.status(404).json({ error: "Session not found. Call /start first." });
+    if (isGuest) {
+      profileId = sessionId.replace("guest_", "");
+      history = (clientHistory as any) || [];
+    } else {
+      const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+        include: {
+          profile: true,
+          messages: { orderBy: { createdAt: "asc" } },
+        },
+      });
+      if (!session) {
+        return res.status(404).json({ error: "Session not found. Call /start first." });
+      }
+      profileId = session.profileId;
+      history = session.messages.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
     }
  
-
     const embeddingCount = await prisma.embedding.count({
-      where: { profileId: session.profileId },
+      where: { profileId },
     });
  
     if (embeddingCount === 0) {
@@ -74,22 +85,17 @@ export async function  RAGChatController( req : Request  , res : Response ){
         notIndexed: true,
       });
     }
- 
- 
-    const history = session.messages.map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    }));
- 
 
-    const reply = await ragAnswer(session.profileId, message, history);
+    const reply = await ragAnswer(profileId, message, history);
  
-
-    await prisma.$transaction([
-      prisma.message.create({ data: { sessionId, role: "user", content: message } }),
-      prisma.message.create({ data: { sessionId, role: "assistant", content: reply } }),
-      prisma.session.update({ where: { id: sessionId }, data: { updatedAt: new Date() } }),
-    ]);
+    if (!isGuest) {
+      // Only persist messages if it's a real user session
+      await prisma.$transaction([
+        prisma.message.create({ data: { sessionId, role: "user", content: message } }),
+        prisma.message.create({ data: { sessionId, role: "assistant", content: reply } }),
+        prisma.session.update({ where: { id: sessionId }, data: { updatedAt: new Date() } }),
+      ]);
+    }
  
     return res.status(200).json({ reply, mode: "rag" });
   } catch (err: any) {

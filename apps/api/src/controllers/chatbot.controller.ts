@@ -4,8 +4,7 @@ import {prisma} from "@repo/database"
 import { callOpenRouter , buildSystemPrompt  } from "../services/chatbot.services";
 
 
-export async function  NewSessionController ( req : Request  , res : Response ) { 
-
+export async function NewSessionController(req: Request, res: Response) { 
   const parsed = StartChatSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -17,6 +16,11 @@ export async function  NewSessionController ( req : Request  , res : Response ) 
     const profile = await prisma.profile.findUnique({ where: { id: profileId } });
     if (!profile) {
       return res.status(404).json({ error: "Profile not found. Call /getUserInfo first." });
+    }
+
+    if (!userId) {
+      // Return a stateless guest session that references the profile
+      return res.status(201).json({ success: true, sessionId: `guest_${profileId}` });
     }
 
     const session = await prisma.session.create({
@@ -35,7 +39,7 @@ export async function  NewSessionController ( req : Request  , res : Response ) 
 };
 
 
-export async function  NewMessageController ( req : Request  , res : Response ) {
+export async function NewMessageController(req: Request, res: Response) {
   const parsed = SendMessageSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
@@ -44,57 +48,49 @@ export async function  NewMessageController ( req : Request  , res : Response ) 
   const { sessionId, message } = parsed.data;
 
   try {
+    const isGuest = sessionId.startsWith("guest_");
+    let profile: any;
+    let history: { role: "user" | "assistant"; content: string }[];
 
-    const session = await prisma.session.findUnique({
-      where: { id: sessionId },
-      include: {
-        profile: true,
-        messages: {
-          orderBy: { createdAt: "asc" },
+    if (isGuest) {
+      const profileId = sessionId.replace("guest_", "");
+      profile = await prisma.profile.findUnique({ where: { id: profileId } });
+      if (!profile) return res.status(404).json({ error: "Profile not found." });
+      history = (req.body.history as any) || [];
+    } else {
+      const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+        include: {
+          profile: true,
+          messages: { orderBy: { createdAt: "asc" } },
         },
-      },
-    });
+      });
 
-    if (!session) {
-      return res.status(404).json({ error: "Session not found. Call /chat/start first." });
+      if (!session) {
+        return res.status(404).json({ error: "Session not found. Call /chat/start first." });
+      }
+
+      profile = session.profile;
+      history = session.messages.map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
     }
 
-
-    const history = session.messages.map((m) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    }));
-
-
-    const systemPrompt = buildSystemPrompt(session.profile);
-
+    const systemPrompt = buildSystemPrompt(profile);
 
     const reply = await callOpenRouter(systemPrompt, [
       ...history,
       { role: "user", content: message },
     ]);
 
-
-    await prisma.$transaction([
-      prisma.message.create({
-        data: {
-          sessionId,
-          role: "user",
-          content: message,
-        },
-      }),
-      prisma.message.create({
-        data: {
-          sessionId,
-          role: "assistant",
-          content: reply,
-        },
-      }),
-      prisma.session.update({
-        where: { id: sessionId },
-        data: { updatedAt: new Date() },
-      }),
-    ]);
+    if (!isGuest) {
+      await prisma.$transaction([
+        prisma.message.create({ data: { sessionId, role: "user", content: message } }),
+        prisma.message.create({ data: { sessionId, role: "assistant", content: reply } }),
+        prisma.session.update({ where: { id: sessionId }, data: { updatedAt: new Date() } }),
+      ]);
+    }
 
     return res.status(200).json({ reply });
   } catch (err: any) {

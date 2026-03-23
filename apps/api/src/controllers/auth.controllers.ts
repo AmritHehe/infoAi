@@ -114,7 +114,11 @@ export async function  SignInController ( req : Request  , res : Response ) {
                 message : "JWT SECRET NOT PRESENT IN BACKEND"
             })
         }
-        const JWTToken = jwt.sign({ userId: ExistingUser.id } , secret)
+        const JWTToken = jwt.sign(
+            { userId: ExistingUser.id }, 
+            secret, 
+            { expiresIn: "7d" }
+        );
 
         return res.status(200).json({
             success : true , 

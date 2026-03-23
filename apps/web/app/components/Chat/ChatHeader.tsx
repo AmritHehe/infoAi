@@ -8,9 +8,10 @@ interface Props {
   handle: string;
   onReset: () => void;
   onSignOut: () => void;
+  isAuthed?: boolean;
 }
 
-export default function ChatHeader({ profileData, platform, handle, onReset, onSignOut }: Props) {
+export default function ChatHeader({ profileData, platform, handle, onReset, onSignOut, isAuthed = false }: Props) {
   const d = profileData.Data;
 
   return (
@@ -45,13 +46,15 @@ export default function ChatHeader({ profileData, platform, handle, onReset, onS
       </span>
 
 
-      <button
-        onClick={onSignOut}
-        title="Sign out"
-        className="w-7 h-7 rounded-full border border-white/7 bg-transparent text-white/30 text-[11px] flex items-center justify-center cursor-pointer transition-all hover:border-white/20 hover:text-white/60 shrink-0"
-      >
-        ↪
-      </button>
+      {isAuthed && (
+        <button
+          onClick={onSignOut}
+          title="Sign out"
+          className="w-7 h-7 rounded-full border border-white/7 bg-transparent text-white/30 text-[11px] flex items-center justify-center cursor-pointer transition-all hover:border-white/20 hover:text-white/60 shrink-0"
+        >
+          ↪
+        </button>
+      )}
 
 
       <button

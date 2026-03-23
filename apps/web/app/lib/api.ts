@@ -1,6 +1,6 @@
 import { Platform } from "../types";
 
-const API_BASE = "https://api-infoai.amrithehe.com";
+const API_BASE = "http://localhost:3005";
 
 function getHeaders(includeContentType = true) {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -10,18 +10,18 @@ function getHeaders(includeContentType = true) {
   return headers;
 }
 
-export async function getUserInfo(handle: string, platform: Platform) {
+export async function getUserInfo(input: string) {
   const res = await fetch(`${API_BASE}/getUserInfo`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ handle, platform }),
+    body: JSON.stringify({ input }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "Failed to fetch profile");
   return data.profile;
 }
 
-export async function startSession(profileId: string, userId: string) {
+export async function startSession(profileId: string, userId?: string | null) {
   const res = await fetch(`${API_BASE}/start`, {
     method: "POST",
     headers: getHeaders(),
@@ -32,11 +32,11 @@ export async function startSession(profileId: string, userId: string) {
   return data.sessionId as string;
 }
 
-export async function sendMessage(sessionId: string, message: string) {
+export async function sendMessage(sessionId: string, message: string, history?: {role: string, content: string}[]) {
   const res = await fetch(`${API_BASE}/message`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ sessionId, message }),
+    body: JSON.stringify({ sessionId, message, history }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "Failed to get reply");
@@ -84,11 +84,11 @@ export async function getRagStatus(profileId: string) {
   return data as { indexed: boolean; chunksCount: number };
 }
  
-export async function sendRagMessage(sessionId: string, message: string) {
+export async function sendRagMessage(sessionId: string, message: string, history?: {role: string, content: string}[]) {
   const res = await fetch(`${API_BASE}/rag/chat`, {
     method: "POST",
     headers: getHeaders(),
-    body: JSON.stringify({ sessionId, message }),
+    body: JSON.stringify({ sessionId, message, history }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "Failed to get RAG reply");

@@ -7,10 +7,20 @@ interface RateLimitData {
   resetTime: number;
 }
 
+const WINDOW_MS = 60 * 1000; // 1 minute window
+const MAX_REQUESTS = 30;     // maximum 30 requests per minute
+
 const userStore = new Map<string, RateLimitData>();
 
-const WINDOW_MS = 60 * 1000; // 1 minute window
-const MAX_REQUESTS = 30;     // maximum 10 requests per minute
+// Garbage clean up to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of userStore.entries()) {
+    if (now > data.resetTime) {
+      userStore.delete(key);
+    }
+  }
+}, WINDOW_MS * 5); // Clean up every 5 minutes
 
 export function RateLimiter(req: Request, res: Response, next: NextFunction) {
   const userId = req.userId;

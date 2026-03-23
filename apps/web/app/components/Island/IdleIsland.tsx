@@ -4,69 +4,42 @@ import { Platform } from "../../types";
 
 interface Props {
   handle: string;
-  platform: Platform;
   onHandleChange: (v: string) => void;
-  onPlatformChange: (p: Platform) => void;
   onSubmit: () => void;
+  error?: string | null;
 }
 
 export default function IdleIsland({
-  handle, platform, onHandleChange, onPlatformChange, onSubmit,
+  handle, onHandleChange, onSubmit, error
 }: Props) {
   return (
-    <div className="w-full bg-[#111] border border-white/7 rounded-3xl overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.6)] pl-5 pr-1.5 py-1.5">
-      <div className="flex items-center gap-3">
-
-        <input
-          className="flex-1 bg-transparent border-none outline-none font-mono text-[15px] text-[#f0f0f0] placeholder:text-white/20 caret-accent"
-          placeholder={platform === "X" ? "enter x handle..." : "linkedin.com/in/..."}
-          value={handle}
-          onChange={(e) => onHandleChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-          autoFocus
-        />
-
-
-        <div className="flex items-center bg-white/4 border border-white/7 rounded-full p-1 gap-0.5 shrink-0">
+    <div className="flex flex-col gap-3 w-full">
+      <div className="w-full bg-[#111] border border-white/7 rounded-[24px] overflow-hidden shadow-[0_0_0_1px_rgba(0,0,0,0.5),0_32px_64px_rgba(0,0,0,0.6)] pl-5 pr-1.5 py-1.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_32px_64px_rgba(0,0,0,0.6)] transition-all">
+        <div className="flex items-center gap-3">
+          <input
+            className="flex-1 bg-transparent border-none outline-none font-mono text-[14px] text-[#f0f0f0] placeholder:text-white/20 caret-accent"
+            placeholder="enter an x handle or linkedin url..."
+            value={handle}
+            onChange={(e) => onHandleChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onSubmit()}
+            autoFocus
+            spellCheck={false}
+          />
           <button
-            onClick={() => onPlatformChange("X")}
-            title="X / Twitter"
-            className={`
-              w-8 h-8 rounded-full text-sm flex items-center justify-center
-              transition-all duration-200 border-none cursor-pointer
-              ${platform === "X"
-                ? "bg-[#f7f7f7] text-black"
-                : "bg-transparent text-white/30 hover:text-white/60"
-              }
-            `}
+            onClick={onSubmit}
+            disabled={!handle.trim()}
+            className="w-11 h-11 rounded-full bg-accent text-black text-lg flex items-center justify-center shrink-0 border-none cursor-pointer transition-all duration-150 hover:scale-105 active:scale-97 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            𝕏
-          </button>
-          <button
-            onClick={() => onPlatformChange("LINKEDIN")}
-            title="LinkedIn"
-            className={`
-              w-8 h-8 rounded-full text-sm flex items-center justify-center
-              transition-all duration-200 border-none cursor-pointer
-              ${platform === "LINKEDIN"
-                ? "bg-[#0a66c2] text-white"
-                : "bg-transparent text-white/30 hover:text-white/60"
-              }
-            `}
-          >
-            in
+            →
           </button>
         </div>
-
-
-        <button
-          onClick={onSubmit}
-          disabled={!handle.trim()}
-          className="w-11 h-11 rounded-full bg-accent text-black text-lg flex items-center justify-center shrink-0 border-none cursor-pointer transition-all duration-150 hover:scale-105 active:scale-97 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-        >
-          →
-        </button>
       </div>
+      
+      {error && (
+        <div className="w-full text-center px-4 py-3 bg-[rgba(255,50,50,0.05)] border border-[rgba(255,50,50,0.1)] rounded-[16px] text-[#ff6b6b] text-[13px] font-mono leading-relaxed animate-fade-up">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

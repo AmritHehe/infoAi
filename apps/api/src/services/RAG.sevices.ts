@@ -217,7 +217,7 @@ INSTRUCTIONS:
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "stepfun/step-3.5-flash:free",
+      model: "google/gemini-3.1-flash-lite-preview",
       messages: [
         { role: "system", content: systemPrompt },
         ...conversationHistory,

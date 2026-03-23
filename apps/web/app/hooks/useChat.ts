@@ -27,11 +27,11 @@ export function useChat() {
     setError(null);
 
     try {
-      const userId = getUserIdFromToken();
-      if (!userId) throw new Error("Not authenticated");
+      const userId = getUserIdFromToken(); // Can be null now
 
-      const profile = await getUserInfo(handle.trim(), platform);
+      const profile = await getUserInfo(handle.trim());
       setProfileData(profile);
+      setPlatform(profile.platform); // Set platform from the backend response instead
 
       const sid = await startSession(profile.id, userId);
       setSessionId(sid);
@@ -40,7 +40,7 @@ export function useChat() {
       setStage("chat");
       setMessages([{
         role: "assistant",
-        content: `Loaded ${platform === "X" ? "@" : ""}${handle}'s public profile. Ask me anything about them.`,
+        content: `Loaded ${profile.platform === "X" ? "@" : ""}${handle}'s public profile. Ask me anything about them.`,
       }]);
     } catch (err: any) {
       setError(err.message ?? "Something went wrong.");
@@ -57,9 +57,10 @@ export function useChat() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
 
     try {
+      const historyPayload = [...messages, { role: "user" as const, content: text }];
       const reply = ragMode
-        ? await sendRagMessage(sessionId, text)
-        : await sendMessage(sessionId, text);
+        ? await sendRagMessage(sessionId, text, historyPayload)
+        : await sendMessage(sessionId, text, historyPayload);
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err: any) {
       if (err.message?.includes("not indexed")) {

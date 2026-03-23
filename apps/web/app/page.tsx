@@ -17,13 +17,9 @@ export default function HomePage() {
 
   useEffect(() => {
     const ok = isAuthenticated();
-    if (!ok) {
-      router.replace("/auth");
-    } else {
-      setAuthed(true);
-    }
+    setAuthed(ok);
     setHydrated(true);
-  }, [router]);
+  }, []);
 
   const {
     platform, setPlatform,
@@ -51,7 +47,7 @@ export default function HomePage() {
     router.replace("/auth");
   };
 
-  if (!hydrated || !authed) return null;
+  if (!hydrated) return null;
 
   return (
     <div className="min-h-screen bg-bg text-[#f0f0f0] font-['Syne',sans-serif] flex flex-col items-center justify-center p-6 relative">
@@ -105,27 +101,37 @@ export default function HomePage() {
 
             <IdleIsland
               handle={handle}
-              platform={platform}
               onHandleChange={setHandle}
-              onPlatformChange={setPlatform}
               onSubmit={handleExtract}
+              error={error}
             />
             
             <div className="flex items-center gap-4 mt-6">
-              <button
-                onClick={handleShowSessions}
-                disabled={isLoadingSessions}
-                className="font-mono text-[11px] text-white/30 hover:text-white/60 transition-colors cursor-pointer bg-transparent border-none disabled:opacity-40"
-              >
-                {isLoadingSessions ? "loading…" : "↑ past sessions"}
-              </button>
-              <span className="text-white/10 font-mono text-xs">·</span>
-              <button
-                onClick={handleSignOut}
-                className="font-mono text-[11px] text-white/20 hover:text-white/40 transition-colors cursor-pointer bg-transparent border-none"
-              >
-                sign out
-              </button>
+              {authed ? (
+                <>
+                  <button
+                    onClick={handleShowSessions}
+                    disabled={isLoadingSessions}
+                    className="font-mono text-[11px] text-white/30 hover:text-white/60 transition-colors cursor-pointer bg-transparent border-none disabled:opacity-40"
+                  >
+                    {isLoadingSessions ? "loading…" : "↑ past sessions"}
+                  </button>
+                  <span className="text-white/10 font-mono text-xs">·</span>
+                  <button
+                    onClick={handleSignOut}
+                    className="font-mono text-[11px] text-white/20 hover:text-white/40 transition-colors cursor-pointer bg-transparent border-none"
+                  >
+                    sign out
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => router.push("/auth")}
+                  className="font-mono text-[11px] text-white/40 hover:text-white transition-colors cursor-pointer bg-transparent border border-white/10 px-3 py-1.5 rounded-full"
+                >
+                  sign in to save chats
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -149,25 +155,29 @@ export default function HomePage() {
         )}
 
         {stage === "chat" && profileData && (
-          <ChatIsland
-            profileData={profileData}
-            platform={platform}
-            handle={handle}
-            messages={messages}
-            input={input}
-            isSending={isSending}
-            ragMode={ragMode}
-            onInputChange={setInput}
-            onSend={handleSend}
-            onReset={handleReset}
-            onSignOut={handleSignOut}
-            onRagToggle={setRagMode}
-          />
-        )}
-
-        {error && (
-          <div className="font-mono text-xs text-red-400 bg-red-500/8 border border-red-500/20 px-3.5 py-2 rounded-full max-w-130 text-center">
-            ⚠ {error}
+          <div className="w-full flex flex-col items-center gap-3 animate-fade-up">
+            {!authed && (
+              <div className="flex items-center gap-2 text-[12px] font-mono text-[#ffb86c] bg-[#ffb86c]/10 border border-[#ffb86c]/20 px-4 py-2 rounded-full shadow-lg">
+                <span className="opacity-80">Guest Mode:</span>
+                <button onClick={() => router.push("/auth")} className="underline hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0">Sign in</button>
+                <span className="opacity-80">to save your history!</span>
+              </div>
+            )}
+            <ChatIsland
+              profileData={profileData}
+              platform={platform}
+              handle={handle}
+              messages={messages}
+              input={input}
+              isSending={isSending}
+              ragMode={ragMode}
+              onInputChange={setInput}
+              onSend={handleSend}
+              onReset={handleReset}
+              onSignOut={handleSignOut}
+              onRagToggle={setRagMode}
+              isAuthed={authed}
+            />
           </div>
         )}
       </div>

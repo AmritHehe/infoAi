@@ -81,8 +81,39 @@ export async function collectLinkedInProfile(
         finalUrl.includes("/authwall") ||
         finalUrl.includes("/checkpoint")
       ) {
-        result = { error: `li_at cookie expired. Please refresh it from your browser.` };
-        return;
+        console.log(`[LinkedIn] Session expired or invalid. Attempting fallback login...`);
+        const email = process.env.LINKEDIN_EMAIL;
+        const pass = process.env.LINKEDIN_PASSWORD;
+
+        if (!email || !pass) {
+          result = { error: `li_at cookie expired. Please provide LINKEDIN_EMAIL and LINKEDIN_PASSWORD in .env for fallback.` };
+          return;
+        }
+
+        try {
+          await page.goto("https://www.linkedin.com/login");
+          await page.waitForSelector("#username", { timeout: 10000 });
+          await page.fill("#username", email);
+          await page.fill("#password", pass);
+          await page.click("button[type='submit']");
+          
+          // Wait to see if login succeeds or hits a CAPTCHA
+          await page.waitForTimeout(6000);
+          
+          if (page.url().includes("/checkpoint/challenge") || page.url().includes("/login")) {
+            result = { error: `Fallback login failed! LinkedIn likely blocked the attempt or demanded a CAPTCHA.` };
+            return;
+          }
+
+          console.log(`[LinkedIn] Fallback login successful! Navigating back to profile...`);
+          await page.goto(url);
+          await page.waitForLoadState("domcontentloaded");
+          await page.waitForTimeout(3000);
+          
+        } catch (authErr: any) {
+          result = { error: `Fallback login crashed: ${authErr.message}` };
+          return;
+        }
       }
 
       // Scroll to trigger lazy loading

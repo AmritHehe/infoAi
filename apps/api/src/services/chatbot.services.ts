@@ -15,7 +15,7 @@ export async function callOpenRouter(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "minimax/minimax-m2.5:free",
+      model: "google/gemini-3.1-flash-lite-preview",
       messages: [
         { role: "system", content: systemPrompt },
         ...history,

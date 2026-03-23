@@ -27,3 +27,22 @@ export async function TokenVerification(req : Request  , res :Response , next : 
     next()
     
 }
+
+export async function OptionalTokenVerification(req: Request, res: Response, next: NextFunction) {
+    const bearerToken: string | undefined = req.headers.authorization;
+    if (!bearerToken || !bearerToken.startsWith('Bearer ')) {
+        return next();
+    }
+    const tokenArray = bearerToken.split(" ");
+    const token = tokenArray[1];
+    
+    try {
+        const decoded = jwt.verify(token, jwtSecret) as JwtPayload & { userId: string };
+        if (decoded) {
+            req.userId = decoded.userId;
+        }
+    } catch (err) {
+        // Token invalid or expired, continue as guest
+    }
+    next();
+}

@@ -11,16 +11,30 @@ export async function ExtractUserInfoController(req: Request, res: Response) {
     return res.status(400).json({ error: "Invalid request", details: parsed.error.flatten() });
   }
 
-  const { handle, platform } = parsed.data;
+  const { input } = parsed.data;
+  let platform: "X" | "LINKEDIN" = "X";
+  let handle = input.trim();
 
-  const normalizedHandle =
-    platform === "LINKEDIN"
-      ? extractUsername(handle)
-      : handle.replace(/^@/, "").trim();
-  const dbHandle = normalizedHandle.toLowerCase();
+  // Auto-Detect Platform
+  if (handle.includes("linkedin.com/in/")) {
+    platform = "LINKEDIN";
+    try {
+      handle = extractUsername(handle);
+    } catch {
+      return res.status(400).json({ error: "Invalid LinkedIn URL format. Make sure it contains linkedin.com/in/username." });
+    }
+  } else if (handle.includes("x.com/") || handle.includes("twitter.com/")) {
+    platform = "X";
+    handle = handle.split("x.com/").pop()?.split("twitter.com/").pop()?.split("?")[0]?.replace(/\/$/, "") || handle;
+  } else {
+    // Default to X
+    platform = "X";
+    handle = handle.replace(/^@/, "").trim();
+  }
+
+  const dbHandle = handle.toLowerCase();
 
   try {
-
     const existing = await prisma.profile.findUnique({
       where: { platform_handle: { platform, handle: dbHandle } },
     });
@@ -29,15 +43,17 @@ export async function ExtractUserInfoController(req: Request, res: Response) {
       return res.json({ success: true, profile: existing, source: "cache" });
     }
 
-
     const profileData =
       platform === "X"
         ? await collectTwitterProfile(dbHandle)
         : await collectLinkedInProfile(handle);
 
-
     if ("error" in profileData) {
-      return res.status(404).json({ error: profileData.error });
+      // Provide custom error messaging based on platform
+      const errorMsg = platform === "X"
+        ? `${profileData.error} (Note: X handles can be case-sensitive or private. Double check the exact spelling!)`
+        : `${profileData.error} (Could not read this LinkedIn profile. It might be private.)`;
+      return res.status(404).json({ error: errorMsg });
     }
 
     // 4. Upsert into DB handles race conditions between two requests
