@@ -4,10 +4,11 @@ import { chromium, type BrowserContext, type Page } from "playwright";
 import type { LinkedInProfile } from "../../types";
 
 const LINKEDIN_LOGIN_URL = "https://www.linkedin.com/login";
-const DEFAULT_COOKIE_STORE_PATH = path.resolve(
-  process.cwd(),
-  "apps/api/.storage/linkedin-li-at.json"
-);
+const API_ROOT = process.cwd().endsWith("/apps/api")
+  ? process.cwd()
+  : path.resolve(process.cwd(), "apps/api");
+const DEFAULT_COOKIE_STORE_PATH = path.resolve(API_ROOT, ".storage/linkedin-li-at.json");
+const DEFAULT_FAILURE_SCREENSHOT_DIR = path.resolve(API_ROOT, ".storage/linkedin-failures");
 
 type ScrapedPayload = {
   name: string | null;
@@ -24,30 +25,87 @@ type ScrapeAttempt =
   | { ok: true; payload: ScrapedPayload }
   | { ok: false; reason: "auth" | "not-found" | "failed"; message: string };
 
+function logLinkedIn(step: string, details?: string): void {
+  const now = new Date().toISOString();
+  if (details) {
+    console.log(`[LinkedIn][${now}][${step}] ${details}`);
+    return;
+  }
+  console.log(`[LinkedIn][${now}][${step}]`);
+}
+
+function maskSecret(secret: string | null | undefined): string {
+  if (!secret) return "null";
+  if (secret.length <= 8) return `${secret.slice(0, 2)}***`;
+  return `${secret.slice(0, 4)}***${secret.slice(-4)}`;
+}
+
+function getFailureScreenshotDir(): string {
+  return (
+    process.env.LINKEDIN_FAILURE_SCREENSHOT_DIR?.trim() || DEFAULT_FAILURE_SCREENSHOT_DIR
+  );
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
+async function saveFailureScreenshot(page: Page, reason: string): Promise<void> {
+  try {
+    const dir = getFailureScreenshotDir();
+    await mkdir(dir, { recursive: true });
+    const safeReason = reason.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const filePath = path.resolve(
+      dir,
+      `${new Date().toISOString().replace(/[:.]/g, "-")}-${safeReason}.png`
+    );
+    await withTimeout(page.screenshot({ path: filePath, fullPage: true }), 5_000, "screenshot");
+    logLinkedIn("FAILURE_SCREENSHOT_SAVED", `path=${filePath}`);
+  } catch (error: any) {
+    logLinkedIn("FAILURE_SCREENSHOT_ERROR", error?.message ?? String(error));
+  }
+}
+
 function getCookieStorePath(): string {
   return process.env.LINKEDIN_COOKIE_STORE_PATH?.trim() || DEFAULT_COOKIE_STORE_PATH;
 }
 
 async function readStoredLiAt(): Promise<string | null> {
   const cookieStorePath = getCookieStorePath();
+  logLinkedIn("COOKIE_READ_START", `path=${cookieStorePath}`);
   try {
     const raw = await readFile(cookieStorePath, "utf-8");
     const parsed = JSON.parse(raw) as { liAt?: string };
     const liAt = parsed.liAt?.trim();
+    logLinkedIn("COOKIE_READ_OK", `found=${Boolean(liAt)} value=${maskSecret(liAt)}`);
     return liAt || null;
   } catch {
+    logLinkedIn("COOKIE_READ_MISS", `path=${cookieStorePath}`);
     return null;
   }
 }
 
 async function persistLiAt(liAt: string): Promise<void> {
   const cookieStorePath = getCookieStorePath();
+  logLinkedIn("COOKIE_WRITE_START", `path=${cookieStorePath} value=${maskSecret(liAt)}`);
   await mkdir(path.dirname(cookieStorePath), { recursive: true });
   await writeFile(
     cookieStorePath,
     JSON.stringify({ liAt, updatedAt: new Date().toISOString() }, null, 2),
     "utf-8"
   );
+  logLinkedIn("COOKIE_WRITE_DONE", `path=${cookieStorePath}`);
 }
 
 function isAuthPage(url: string): boolean {
@@ -68,6 +126,10 @@ function normalizeCookieCandidates(candidates: Array<string | null | undefined>)
 }
 
 async function createSession(liAt?: string) {
+  logLinkedIn(
+    "SESSION_CREATE_START",
+    `withCookie=${Boolean(liAt)} cookie=${maskSecret(liAt)}`
+  );
   const browser = await chromium.launch({
     headless: true,
     args: [
@@ -82,6 +144,7 @@ async function createSession(liAt?: string) {
   });
 
   if (liAt) {
+    logLinkedIn("SESSION_COOKIE_INJECT");
     await context.addCookies([
       {
         name: "li_at",
@@ -104,6 +167,7 @@ async function createSession(liAt?: string) {
     (window as Window & { chrome?: { runtime: object } }).chrome = { runtime: {} };
   });
 
+  logLinkedIn("SESSION_CREATE_DONE");
   return { browser, context, page };
 }
 
@@ -112,25 +176,62 @@ async function closeSession(
   context: BrowserContext | null,
   page: Page | null
 ): Promise<void> {
+  logLinkedIn("SESSION_CLOSE_START");
   try {
-    await page?.close({ runBeforeUnload: false });
-  } catch {}
+    if (page) await withTimeout(page.close({ runBeforeUnload: false }), 5_000, "page.close");
+  } catch (error: any) {
+    logLinkedIn("SESSION_CLOSE_WARN", `page=${error?.message ?? String(error)}`);
+  }
   try {
-    await context?.close();
-  } catch {}
+    if (context) await withTimeout(context.close(), 5_000, "context.close");
+  } catch (error: any) {
+    logLinkedIn("SESSION_CLOSE_WARN", `context=${error?.message ?? String(error)}`);
+  }
   try {
-    await browser?.close();
-  } catch {}
+    if (browser) await withTimeout(browser.close(), 8_000, "browser.close");
+  } catch (error: any) {
+    logLinkedIn("SESSION_CLOSE_WARN", `browser=${error?.message ?? String(error)}`);
+  }
+  logLinkedIn("SESSION_CLOSE_DONE");
 }
 
 async function performPageScrape(page: Page, profileUrl: string): Promise<ScrapeAttempt> {
-  await page.goto(profileUrl, { waitUntil: "domcontentloaded" });
+  logLinkedIn("SCRAPE_NAVIGATE_START", `url=${profileUrl}`);
+  try {
+    await withTimeout(
+      page.goto(profileUrl, { waitUntil: "domcontentloaded", timeout: 25_000 }),
+      27_000,
+      "profile navigation"
+    );
+  } catch (error: any) {
+    const message = error?.message ?? String(error);
+    logLinkedIn("SCRAPE_NAVIGATE_ERROR", message);
+    await saveFailureScreenshot(page, "scrape_navigate_error");
+    if (
+      message.includes("ERR_TOO_MANY_REDIRECTS") ||
+      message.includes("Timeout") ||
+      message.includes("timed out")
+    ) {
+      return {
+        ok: false,
+        reason: "auth",
+        message: "Profile navigation blocked/timed out (likely challenge or rate limit).",
+      };
+    }
+    return {
+      ok: false,
+      reason: "failed",
+      message: `Profile navigation failed: ${message}`,
+    };
+  }
   await page.waitForTimeout(2_000);
 
   const landedUrl = page.url();
-  console.log(`[LinkedIn] Landed: ${landedUrl}`);
+  logLinkedIn("SCRAPE_NAVIGATE_DONE", `landedUrl=${landedUrl}`);
 
   if (isAuthPage(landedUrl)) {
+    logLinkedIn("SCRAPE_AUTH_REDIRECT", `url=${landedUrl}`);
+    await saveFailureScreenshot(page, "scrape_auth_redirect");
     return {
       ok: false,
       reason: "auth",
@@ -142,6 +243,7 @@ async function performPageScrape(page: Page, profileUrl: string): Promise<Scrape
     await page.evaluate((y) => window.scrollTo(0, y), pos);
     await page.waitForTimeout(600);
   }
+  logLinkedIn("SCRAPE_SCROLL_DONE");
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(500);
 
@@ -331,12 +433,13 @@ async function performPageScrape(page: Page, profileUrl: string): Promise<Scrape
     return { name, headline, location, image, about, experience, education, skills };
   });
 
-  console.log(`[LinkedIn] name: "${scraped.name}", headline: "${scraped.headline}"`);
-  console.log(
-    `[LinkedIn] exp: ${scraped.experience.length}, edu: ${scraped.education.length}, skills: ${scraped.skills.length}`
+  logLinkedIn(
+    "SCRAPE_PARSE_SUMMARY",
+    `name=${scraped.name ?? "null"} headline=${scraped.headline ?? "null"} exp=${scraped.experience.length} edu=${scraped.education.length} skills=${scraped.skills.length}`
   );
 
   if (!scraped.name) {
+    logLinkedIn("SCRAPE_PARSE_FAIL", "missing name");
     return {
       ok: false,
       reason: "not-found",
@@ -353,20 +456,34 @@ async function loginAndExtractLiAt(
   email: string,
   password: string
 ): Promise<string | null> {
-  await page.goto(LINKEDIN_LOGIN_URL, { waitUntil: "domcontentloaded" });
+  logLinkedIn("LOGIN_START", `url=${LINKEDIN_LOGIN_URL}`);
+  await withTimeout(
+    page.goto(LINKEDIN_LOGIN_URL, { waitUntil: "domcontentloaded", timeout: 25_000 }),
+    27_000,
+    "login navigation"
+  );
+  logLinkedIn("LOGIN_PAGE_LOADED", `landedUrl=${page.url()}`);
   await page.waitForSelector("#username", { timeout: 15_000 });
+  logLinkedIn("LOGIN_FORM_FOUND", "selectors=#username,#password");
   await page.fill("#username", email);
+  logLinkedIn("LOGIN_USER_FILLED");
   await page.fill("#password", password);
+  logLinkedIn("LOGIN_PASSWORD_FILLED");
   await page.click("button[type='submit']");
+  logLinkedIn("LOGIN_SUBMITTED");
   await page.waitForTimeout(7_000);
 
   const currentUrl = page.url();
+  logLinkedIn("LOGIN_POST_SUBMIT_URL", `url=${currentUrl}`);
   if (isAuthPage(currentUrl)) {
+    logLinkedIn("LOGIN_AUTH_REDIRECT", `url=${currentUrl}`);
+    await saveFailureScreenshot(page, "login_auth_redirect");
     return null;
   }
 
   const cookies = await context.cookies("https://www.linkedin.com");
   const liAtCookie = cookies.find((cookie) => cookie.name === "li_at")?.value ?? null;
+  logLinkedIn("LOGIN_COOKIE_EXTRACT", `found=${Boolean(liAtCookie)} value=${maskSecret(liAtCookie)}`);
   return liAtCookie;
 }
 
@@ -428,18 +545,26 @@ export async function collectLinkedInProfile(
   const username = extractUsername(urlOrHandle);
   const profileUrl = `https://www.linkedin.com/in/${username}/`;
 
-  console.log(`[LinkedIn] Scraping: ${profileUrl}`);
+  logLinkedIn("COLLECT_START", `profileUrl=${profileUrl}`);
 
   const storedLiAt = await readStoredLiAt();
   const envLiAt = process.env.LINKEDIN_LI_AT ?? null;
   const cookieCandidates = normalizeCookieCandidates([storedLiAt, envLiAt]);
+  logLinkedIn(
+    "COOKIE_CANDIDATES_READY",
+    `count=${cookieCandidates.length} stored=${Boolean(storedLiAt)} env=${Boolean(envLiAt)}`
+  );
 
-  for (const candidate of cookieCandidates) {
+  for (const [index, candidate] of cookieCandidates.entries()) {
     let browser: Awaited<ReturnType<typeof chromium.launch>> | null = null;
     let context: BrowserContext | null = null;
     let page: Page | null = null;
 
     try {
+      logLinkedIn(
+        "COOKIE_ATTEMPT_START",
+        `attempt=${index + 1}/${cookieCandidates.length} cookie=${maskSecret(candidate)}`
+      );
       const session = await createSession(candidate);
       browser = session.browser;
       context = session.context;
@@ -447,17 +572,19 @@ export async function collectLinkedInProfile(
 
       const attempt = await performPageScrape(page, profileUrl);
       if (attempt.ok) {
+        logLinkedIn("COOKIE_ATTEMPT_SUCCESS", `attempt=${index + 1}`);
         await persistLiAt(candidate);
         return buildLinkedInProfile(attempt.payload, profileUrl);
       }
 
       if (attempt.reason !== "auth") {
+        logLinkedIn("COOKIE_ATTEMPT_FAIL_NON_AUTH", `attempt=${index + 1} message=${attempt.message}`);
         return { error: attempt.message };
       }
 
-      console.log("[LinkedIn] Stored/env cookie invalid. Trying next candidate...");
+      logLinkedIn("COOKIE_ATTEMPT_FAIL_AUTH", `attempt=${index + 1} message=${attempt.message}`);
     } catch (error: any) {
-      console.log(`[LinkedIn] Cookie attempt failed: ${error?.message ?? String(error)}`);
+      logLinkedIn("COOKIE_ATTEMPT_ERROR", `attempt=${index + 1} error=${error?.message ?? String(error)}`);
     } finally {
       await closeSession(browser, context, page);
     }
@@ -466,6 +593,7 @@ export async function collectLinkedInProfile(
   const email = process.env.LINKEDIN_EMAIL;
   const password = process.env.LINKEDIN_PASSWORD;
   if (!email || !password) {
+    logLinkedIn("LOGIN_CREDENTIALS_MISSING");
     return {
       error:
         "No valid stored cookie found. Set LINKEDIN_EMAIL and LINKEDIN_PASSWORD to refresh li_at automatically.",
@@ -482,25 +610,32 @@ export async function collectLinkedInProfile(
     context = session.context;
     page = session.page;
 
-    console.log("[LinkedIn] Attempting credential login to refresh li_at...");
+    logLinkedIn("LOGIN_REFRESH_ATTEMPT");
     const freshLiAt = await loginAndExtractLiAt(page, context, email, password);
 
     if (!freshLiAt) {
+      logLinkedIn("LOGIN_REFRESH_FAILED");
       return {
         error: "LinkedIn login failed (likely checkpoint/CAPTCHA). Could not refresh li_at.",
       };
     }
 
     await persistLiAt(freshLiAt);
-    console.log(`[LinkedIn] Saved fresh li_at to ${getCookieStorePath()}`);
+    logLinkedIn("LOGIN_REFRESH_SUCCESS", `cookiePath=${getCookieStorePath()}`);
 
     const scrapeAttempt = await performPageScrape(page, profileUrl);
     if (!scrapeAttempt.ok) {
+      logLinkedIn("POST_LOGIN_SCRAPE_FAILED", scrapeAttempt.message);
       return { error: scrapeAttempt.message };
     }
 
+    logLinkedIn("COLLECT_SUCCESS");
     return buildLinkedInProfile(scrapeAttempt.payload, profileUrl);
   } catch (error: any) {
+    logLinkedIn("COLLECT_FATAL_ERROR", error?.message ?? String(error));
+    if (page) {
+      await saveFailureScreenshot(page, "collect_fatal_error");
+    }
     return { error: `LinkedIn scraping failed: ${error?.message ?? String(error)}` };
   } finally {
     await closeSession(browser, context, page);
